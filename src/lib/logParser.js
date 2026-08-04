@@ -24,6 +24,25 @@ function cleanName(line) {
     .trim();
 }
 
+const X_MARKER = /^\d*x\d*$/i;
+
+// Reads the per-set reps trailing a weight line, e.g. "135 kg x5  2.1  1.1  3.2"
+// -> [2,1,1,1,3,2] (each "N.M" token is 2+ sets: first number = set 1, second = set 2, …).
+// Letters (x/m, per the log's own legend: x = weniger Gewicht, m = mehr Gewicht) are kept as-is.
+function parseHistoryReps(line) {
+  const tokens = line.trim().split(/\s+/);
+  const xIdx = tokens.findIndex((t) => X_MARKER.test(t));
+  if (xIdx === -1) return [];
+  const reps = [];
+  for (const tok of tokens.slice(xIdx + 1)) {
+    for (const part of tok.split('.')) {
+      if (!part || part === '—' || part === '-') continue;
+      reps.push(/^\d+$/.test(part) ? parseInt(part, 10) : part.toLowerCase());
+    }
+  }
+  return reps;
+}
+
 /**
  * @param {string} text raw pasted/uploaded log
  * @returns {{ days: {num:number, exercises:{name:string, sets:number, reps:string, weight:number}[]}[], warnings: string[] }}
@@ -46,6 +65,7 @@ export function parseLog(text) {
         sets: currentEx.sets,
         reps: currentEx.reps,
         weight: currentEx.weight,
+        history: currentEx.history,
       });
     }
     currentEx = null;
@@ -72,18 +92,20 @@ export function parseLog(text) {
     if (SET_LINE.test(raw)) {
       if (!currentEx) {
         // a weight line with no preceding exercise name — start an "unnamed" one
-        currentEx = { name: null, sets: 2, reps: '8', weight: 0, sawKg: false };
+        currentEx = { name: null, sets: 2, reps: '8', weight: 0, sawKg: false, history: [] };
       }
       const w = parseWeight(raw);
       if (/kg/i.test(raw)) currentEx.sawKg = true;
       if (w > currentEx.weight) currentEx.weight = w;
+      const reps = parseHistoryReps(raw);
+      if (reps.length) currentEx.history.push({ weight: w, reps });
     } else {
       // new exercise name line
       flushExercise();
       const schemeMatch = raw.match(SCHEME);
       const sets = schemeMatch ? Math.max(1, parseInt(schemeMatch[1], 10)) : 2;
       const reps = schemeMatch ? schemeMatch[2].replace(/\s+/g, '') : '8';
-      currentEx = { name: cleanName(raw), sets, reps, weight: 0, sawKg: false };
+      currentEx = { name: cleanName(raw), sets, reps, weight: 0, sawKg: false, history: [] };
     }
   }
   flushDay();
@@ -110,7 +132,7 @@ export function toWeekdayPlan(parsedDays) {
       label,
       rest: false,
       exercises: found.exercises.map(ex =>
-        freshEx(ex.name, '', 90, Array.from({ length: ex.sets }, () => ({ w: ex.weight, r: ex.reps })))
+        freshEx(ex.name, '', 90, Array.from({ length: ex.sets }, () => ({ w: ex.weight, r: ex.reps })), ex.history)
       ),
     };
   });

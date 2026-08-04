@@ -6,6 +6,7 @@
   import PlanEditor from './PlanEditor.svelte';
   import ImportLog from './ImportLog.svelte';
   import WorkoutOverlay from './WorkoutOverlay.svelte';
+  import ExerciseDetail from './ExerciseDetail.svelte';
 
   let showAllPlans = false;
   let peOpen = false;
@@ -13,6 +14,8 @@
   let ilInitialText = '';
   let ilInitialName = 'Importierter Plan';
   let woOpen = false;
+  let edOpen = false;
+  let edStartIdx = 0;
 
   $: plan = $programs.find(p => p.id === $trainState.activePlanId) || $programs[0];
   $: todayIdx = plan ? todayIndexForProgram(plan) : 0;
@@ -47,6 +50,18 @@
       const p = all.find(p => p.id === $trainState.activePlanId);
       const ex = p.days[dayIdx].exercises[exIdx];
       if (!ex.done.includes(setIdx)) ex.done = [...ex.done, setIdx];
+      return all;
+    });
+  }
+
+  function openExerciseDetail(exIdx) { edStartIdx = exIdx; edOpen = true; }
+
+  function saveExerciseLog(exIdx, weight, reps) {
+    programs.update(all => {
+      const p = all.find(p => p.id === $trainState.activePlanId);
+      const ex = p.days[dayIdx].exercises[exIdx];
+      ex.history = [...(ex.history || []), { weight, reps }];
+      ex.sets = ex.sets.map(s => ({ ...s, w: weight }));
       return all;
     });
   }
@@ -90,7 +105,13 @@
   {/if}
   {#each exercises as ex, exIdx}
     <div class="plain-ex">
-      <div class="plain-ex-name">{ex.name}</div>
+      <div
+        class="plain-ex-name"
+        role="button"
+        tabindex="0"
+        on:click={() => openExerciseDetail(exIdx)}
+        on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openExerciseDetail(exIdx); } }}
+      >{ex.name}</div>
       <div class="plain-setlist">
         {#each ex.sets as s, setIdx}
           <div class="plain-set">
@@ -141,6 +162,15 @@
     onToggle={toggleSet}
     on:finish={finishWorkout}
     on:close={() => (woOpen = false)}
+  />
+{/if}
+
+{#if edOpen && plan}
+  <ExerciseDetail
+    exercises={exercises}
+    startIdx={edStartIdx}
+    onSave={saveExerciseLog}
+    on:close={() => (edOpen = false)}
   />
 {/if}
 
