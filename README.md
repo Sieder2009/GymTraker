@@ -1,40 +1,39 @@
-# Ironpeak Fitness — Svelte App
+# Ironpeak Fitness
 
-Eine "echte" App (Vite + Svelte) statt einer einzelnen HTML-Datei. Alle Daten
-(Trainingspläne, Gewichtsverlauf) werden automatisch in `localStorage`
-gespeichert — schließt du die App und öffnest sie später wieder, ist alles
-noch da. Ein frischer Download startet mit einer leeren Planliste; du kannst
-entweder einen eigenen Plan anlegen, dein eigenes Log importieren oder den
-mitgelieferten Beispielplan laden, um die App direkt auszuprobieren.
+Eine Windows-Desktop-App (Vite + Svelte + Electron) für Trainingspläne,
+Gewichtsverlauf und Fortschritt. Alle Daten bleiben **komplett lokal auf
+deinem PC** (`localStorage` im App-Fenster) — keine Cloud, kein Server, keine
+Internetverbindung nötig. Ein frischer Download startet mit einer leeren
+Planliste; du kannst entweder einen eigenen Plan anlegen, dein eigenes Log
+importieren oder den mitgelieferten Beispielplan laden, um die App direkt
+auszuprobieren.
 
-## Lokal starten
+## Herunterladen & Verwenden
+
+1. Auf der **[Releases-Seite](../../releases)** dieses Repos die neueste
+   `Ironpeak-Fitness-*-portable.exe` herunterladen.
+2. Datei doppelklicken — fertig, keine Installation nötig.
+3. Windows SmartScreen warnt beim ersten Start ggf. vor der unbekannten
+   `.exe` (die App ist nicht kommerziell signiert). Auf **"Weitere
+   Informationen"** und dann **"Trotzdem ausführen"** klicken.
+
+Jede neue Version wird automatisch von GitHub Actions gebaut, sobald ein
+Versions-Tag (`vX.Y.Z`) gepusht wird — siehe `.github/workflows/release.yml`.
+
+## Entwicklung
 
 Node.js (Version 18+) wird benötigt.
 
 ```bash
 npm install
-npm run dev
+npm run dev          # Browser-Entwicklungsserver (Vite)
+npm run electron:dev # App im Electron-Fenster, mit Hot-Reload
+npm run electron:build # Windows-.exe bauen (landet in release/)
 ```
 
 Der Entwicklungsserver zeigt dir eine lokale Adresse (z. B. `http://localhost:5173`) —
 im Handy-Browser im selben WLAN kannst du stattdessen die "Network"-Adresse öffnen,
 die beim Start mit angezeigt wird.
-
-## Für den Produktivbetrieb bauen
-
-```bash
-npm run build
-```
-
-Das Ergebnis landet im Ordner `dist/` — diesen kannst du auf jedem einfachen
-Webhost (Netlify, Vercel, GitHub Pages, eigener Server) hochladen.
-
-## "Zur Startseite hinzufügen" (wie eine echte App nutzen)
-
-1. Die gebaute/gehostete Seite auf dem Handy im Browser öffnen.
-2. Safari (iOS): Teilen → "Zum Home-Bildschirm".
-   Chrome (Android): Menü → "App installieren" / "Zum Startbildschirm hinzufügen".
-3. Die App startet danach vollflächig, ganz ohne Browser-Leiste.
 
 ## Trainingsplan anlegen
 
@@ -69,6 +68,9 @@ vor dem Speichern ist genau dafür da, das kurz zu prüfen und bei Bedarf danach
 in der App zu korrigieren.
 
 ```
+electron/
+  main.cjs             Electron-Hauptprozess (öffnet das App-Fenster)
+  preload.cjs
 src/
   main.js              Einstiegspunkt
   App.svelte           Bildschirm-Umschaltung + Tabbar
