@@ -67,6 +67,9 @@ Klammer-Einschübe mitten im Log) kann einzelnes daneben liegen — die Vorschau
 vor dem Speichern ist genau dafür da, das kurz zu prüfen und bei Bedarf danach
 in der App zu korrigieren.
 
+Existieren mehrere gespeicherte Pläne, fragt die App bei jedem Start zuerst,
+welcher davon heute genutzt werden soll.
+
 ```
 electron/
   main.cjs             Electron-Hauptprozess (öffnet das App-Fenster)
@@ -86,7 +89,8 @@ src/
     PlanEditor.svelte   Neuen Trainingsplan von Hand anlegen
     ImportLog.svelte    Log-Import (eigenes Log oder Beispielplan)
     WorkoutOverlay.svelte  Geführtes Workout mit Pausen-Timer & RPE
-    Weight.svelte       Gewichtsverlauf
+    ExerciseDetail.svelte  Übungs-Detail: Verlauf & Session-Eingabe
+    Strength.svelte     Bench/Deadlift/Squat: PR + Fortschritt
     Progress.svelte     Start→Jetzt-Vergleich & Muskelgruppen-Radar
     RadarChart.svelte
     Toast.svelte

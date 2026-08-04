@@ -3,7 +3,7 @@
   import TabBar from './lib/TabBar.svelte';
   import Toast from './lib/Toast.svelte';
   import Training from './lib/Training.svelte';
-  import Weight from './lib/Weight.svelte';
+  import Strength from './lib/Strength.svelte';
   import Progress from './lib/Progress.svelte';
 </script>
 
@@ -12,8 +12,8 @@
     <section class="screen" class:active={$activeScreen === 'training'}>
       <Training />
     </section>
-    <section class="screen" class:active={$activeScreen === 'weight'}>
-      <Weight />
+    <section class="screen" class:active={$activeScreen === 'strength'}>
+      <Strength />
     </section>
     <section class="screen" class:active={$activeScreen === 'progress'}>
       <Progress />

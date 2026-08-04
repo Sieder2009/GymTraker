@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import { programs, trainState } from './stores.js';
   import { todayIndexForProgram, fmt1 } from './data.js';
   import { EXAMPLE_LOG } from './exampleLog.js';
@@ -9,6 +10,7 @@
   import ExerciseDetail from './ExerciseDetail.svelte';
 
   let showAllPlans = false;
+  let planPromptOpen = false;
   let peOpen = false;
   let ilOpen = false;
   let ilInitialText = '';
@@ -16,6 +18,10 @@
   let woOpen = false;
   let edOpen = false;
   let edStartIdx = 0;
+
+  onMount(() => {
+    if ($programs.length > 1) planPromptOpen = true;
+  });
 
   $: plan = $programs.find(p => p.id === $trainState.activePlanId) || $programs[0];
   $: todayIdx = plan ? todayIndexForProgram(plan) : 0;
@@ -27,6 +33,7 @@
     const p = $programs.find(p => p.id === id);
     trainState.set({ activePlanId: id, viewedDayIdx: todayIndexForProgram(p) });
     showAllPlans = false;
+    planPromptOpen = false;
   }
   function selectPlanKey(id, e) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(id); }
@@ -125,6 +132,32 @@
       </div>
     </div>
   {/each}
+{/if}
+
+{#if planPromptOpen}
+  <div class="overlay open">
+    <div class="ov-top">
+      <span style="width:40px"></span>
+      <div style="font-family:'Sora';font-weight:700;font-size:15px">Trainingsplan wählen</div>
+      <button class="iconbtn" on:click={() => (planPromptOpen = false)}>✕</button>
+    </div>
+    <div class="pe-scroll">
+      <p class="radar-hint" style="text-align:left;margin-bottom:12px">Welchen Trainingsplan möchtest du heute nutzen?</p>
+      {#each $programs as p}
+        <div
+          class="plan-row-item"
+          class:sel={p.id === $trainState.activePlanId}
+          role="button"
+          tabindex="0"
+          on:click={() => selectPlan(p.id)}
+          on:keydown={(e) => selectPlanKey(p.id, e)}
+        >
+          <span>{p.name}</span>
+          {#if p.id === $trainState.activePlanId}<span>✓</span>{/if}
+        </div>
+      {/each}
+    </div>
+  </div>
 {/if}
 
 {#if showAllPlans}
