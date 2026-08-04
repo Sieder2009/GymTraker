@@ -7,7 +7,7 @@ function createWindow() {
     height: 860,
     minWidth: 360,
     minHeight: 600,
-    backgroundColor: '#0a0a0d',
+    backgroundColor: '#f5f5f7',
     title: 'Ironpeak Fitness',
     autoHideMenuBar: true,
     webPreferences: {
