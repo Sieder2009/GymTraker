@@ -1,8 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { programs, trainState } from './stores.js';
-  import { todayIndexForProgram, fmt1 } from './data.js';
-  import { EXAMPLE_LOG } from './exampleLog.js';
+  import { todayIndexForProgram, fmt1, WEEKDAYS_SHORT } from './data.js';
   import { toast } from './toast.js';
   import PlanEditor from './PlanEditor.svelte';
   import ImportLog from './ImportLog.svelte';
@@ -13,8 +12,6 @@
   let planPromptOpen = false;
   let peOpen = false;
   let ilOpen = false;
-  let ilInitialText = '';
-  let ilInitialName = 'Importierter Plan';
   let woOpen = false;
   let edOpen = false;
   let edStartIdx = 0;
@@ -25,7 +22,7 @@
 
   $: plan = $programs.find(p => p.id === $trainState.activePlanId) || $programs[0];
   $: todayIdx = plan ? todayIndexForProgram(plan) : 0;
-  $: dayIdx = plan ? (plan.mode === 'weekday' ? todayIdx : (plan.currentDayIdx || 0)) : 0;
+  $: dayIdx = plan ? (plan.mode === 'weekday' ? $trainState.viewedDayIdx : (plan.currentDayIdx || 0)) : 0;
   $: day = plan ? plan.days[dayIdx] : null;
   $: exercises = day && !day.rest ? day.exercises : [];
 
@@ -39,9 +36,12 @@
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(id); }
   }
 
+  function selectDay(i) {
+    trainState.update(s => ({ ...s, viewedDayIdx: i }));
+  }
+
   function openNewPlan() { showAllPlans = false; peOpen = true; }
-  function openImport() { showAllPlans = false; ilInitialText = ''; ilInitialName = 'Importierter Plan'; ilOpen = true; }
-  function openExample() { showAllPlans = false; ilInitialText = EXAMPLE_LOG; ilInitialName = 'Beispielplan (6er-Split)'; ilOpen = true; }
+  function openImport() { showAllPlans = false; ilOpen = true; }
 
   function adjustWeight(exIdx, setIdx, delta) {
     programs.update(all => {
@@ -88,18 +88,25 @@
   <div>
     <h1>{plan ? plan.name : 'Training'}</h1>
     <div class="sub">
-      {#if plan}{day.rest ? 'Ruhetag' : day.label} · {plan.completed || 0} / {plan.goal} Workouts{/if}
+      {#if plan}{day.rest ? 'Ruhetag' : day.label} · {plan.completed || 0} Workouts{/if}
     </div>
   </div>
   <button class="allbtn" on:click={() => (showAllPlans = true)}>Alle Pläne</button>
 </div>
+
+{#if plan && plan.mode === 'weekday'}
+  <div class="dayrow">
+    {#each WEEKDAYS_SHORT as d, i}
+      <button class="daypill" class:today={i === todayIdx} class:sel={i === dayIdx} on:click={() => selectDay(i)}>{d}</button>
+    {/each}
+  </div>
+{/if}
 
 {#if !plan}
   <div class="card" style="text-align:center;padding:32px 20px">
     <p class="plain-rest" style="margin-bottom:16px">Noch kein Trainingsplan angelegt.</p>
     <button class="cta" on:click={openNewPlan}>+ Neuer Plan</button>
     <button class="cta ghost" style="margin-top:10px" on:click={openImport}>📄 Log importieren</button>
-    <button class="cta ghost" style="margin-top:10px" on:click={openExample}>⭐ Beispielplan laden</button>
   </div>
 {:else if day.rest}
   <p class="plain-rest">Heute ist Ruhetag.<br>Kein Training eingetragen.</p>
@@ -183,7 +190,6 @@
       {/each}
       <button class="cta ghost" style="margin-top:14px" on:click={openNewPlan}>+ Neuer Plan</button>
       <button class="cta ghost" style="margin-top:10px" on:click={openImport}>📄 Log importieren</button>
-      <button class="cta ghost" style="margin-top:10px" on:click={openExample}>⭐ Beispielplan laden</button>
     </div>
   </div>
 {/if}
@@ -208,4 +214,4 @@
 {/if}
 
 <PlanEditor bind:open={peOpen} />
-<ImportLog bind:open={ilOpen} initialText={ilInitialText} initialName={ilInitialName} />
+<ImportLog bind:open={ilOpen} />

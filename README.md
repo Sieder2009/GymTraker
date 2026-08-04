@@ -1,12 +1,11 @@
 # Ironpeak Fitness
 
 Eine Windows-Desktop-App (Vite + Svelte + Electron) für Trainingspläne,
-Gewichtsverlauf und Fortschritt. Alle Daten bleiben **komplett lokal auf
-deinem PC** (`localStorage` im App-Fenster) — keine Cloud, kein Server, keine
-Internetverbindung nötig. Ein frischer Download startet mit einer leeren
-Planliste; du kannst entweder einen eigenen Plan anlegen, dein eigenes Log
-importieren oder den mitgelieferten Beispielplan laden, um die App direkt
-auszuprobieren.
+Kraft-Fortschritt (Bench/Deadlift/Squat) und Muskelgruppen-Balance. Alle Daten
+bleiben **komplett lokal auf deinem PC** (`localStorage` im App-Fenster) —
+keine Cloud, kein Server, keine Internetverbindung nötig. Ein frischer
+Download startet mit einer leeren Planliste — es gibt keine vorgegebenen
+Pläne, du legst deinen eigenen an oder importierst dein eigenes Log.
 
 ## Herunterladen & Verwenden
 
@@ -35,17 +34,21 @@ Der Entwicklungsserver zeigt dir eine lokale Adresse (z. B. `http://localhost:51
 im Handy-Browser im selben WLAN kannst du stattdessen die "Network"-Adresse öffnen,
 die beim Start mit angezeigt wird.
 
-## Trainingsplan anlegen
+## Trainingsplan anlegen & nutzen
 
 Auf der Trainingsplan-Seite (bzw. beim ersten Start direkt im Hauptbildschirm)
-gibt es drei Optionen:
+gibt es zwei Optionen, um einen Plan zu bekommen:
 
 - **+ Neuer Plan** — eigenen Plan Tag für Tag von Hand zusammenstellen.
 - **📄 Log importieren** — eigenes handgeschriebenes Trainingslog als `.txt`
   hochladen oder Text einfügen.
-- **⭐ Beispielplan laden** — lädt ein mitgeliefertes, echtes Trainingslog
-  (`src/lib/exampleLog.js`) über denselben Import-Mechanismus, um die App
-  sofort mit echten Daten auszuprobieren.
+
+Bei Plänen "nach Wochentag" kannst du oben über die Tag-Auswahl (Mo–So)
+jederzeit selbst wählen, welchen Tag du dir ansiehst — nicht nur den
+heutigen. Auf eine Übung tippen öffnet die Detailansicht: das zuletzt
+verwendete Gewicht lässt sich dort nach links/rechts ziehen, um es zu ändern,
+danach trägst du die Wiederholungen pro Satz ein. "Speichern" sichert den
+Eintrag im Verlauf und springt automatisch zur nächsten Übung des Tages.
 
 **Wie die App ein Log liest** (`src/lib/logParser.js`):
 - Eine neue Zeile mit "1. Wochentag", "2. Wochentag" usw. beginnt einen neuen Tag.
@@ -82,12 +85,11 @@ src/
     stores.js          Alle App-Daten (Svelte Stores)
     persisted.js        localStorage-Anbindung für Stores
     data.js             Trainingsplan-Hilfsfunktionen
-    exampleLog.js        Mitgeliefertes Beispiel-Trainingslog
     logParser.js         Parser für importierte Log-Texte
     toast.js
-    Training.svelte     Plan-Auswahl, Tages-Strip, Übungen, Workout starten
+    Training.svelte     Plan-/Wochentag-Auswahl, Übungen, Workout starten
     PlanEditor.svelte   Neuen Trainingsplan von Hand anlegen
-    ImportLog.svelte    Log-Import (eigenes Log oder Beispielplan)
+    ImportLog.svelte    Eigenes Log importieren
     WorkoutOverlay.svelte  Geführtes Workout mit Pausen-Timer & RPE
     ExerciseDetail.svelte  Übungs-Detail: Verlauf & Session-Eingabe
     Strength.svelte     Bench/Deadlift/Squat: PR + Fortschritt

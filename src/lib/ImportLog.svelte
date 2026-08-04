@@ -1,25 +1,19 @@
 <script>
   import { programs, trainState } from './stores.js';
   import { parseLog, toWeekdayPlan } from './logParser.js';
+  import { todayIndexForProgram } from './data.js';
   import { toast } from './toast.js';
 
   export let open = false;
-  export let initialText = ''; // prefills + auto-analyzes, e.g. for the bundled example plan
-  export let initialName = 'Importierter Plan';
 
   let rawText = '';
   let parsed = null; // { days, warnings }
   let planName = 'Importierter Plan';
-  let goal = 60;
   let fileInput;
 
   $: if (!open) {
     parsed = null;
     rawText = '';
-  } else if (initialText && !parsed) {
-    rawText = initialText;
-    planName = initialName;
-    parsed = parseLog(rawText);
   }
 
   function onFile(e) {
@@ -40,13 +34,14 @@
     const name = planName.trim() || 'Importierter Plan';
     const days = toWeekdayPlan(parsed.days);
     const id = 'imported_' + Date.now();
-    programs.update(all => [...all, {
-      id, name, mode: 'weekday', goal: Math.max(1, +goal || 60),
+    const newPlan = {
+      id, name, mode: 'weekday',
       completed: 0, currentDayIdx: 0,
       startDate: new Date().toISOString().slice(0, 10),
       days,
-    }]);
-    trainState.set({ activePlanId: id, viewedDayIdx: 0 });
+    };
+    programs.update(all => [...all, newPlan]);
+    trainState.set({ activePlanId: id, viewedDayIdx: todayIndexForProgram(newPlan) });
     toast('Log importiert ✅');
     open = false;
     rawText = '';
@@ -80,8 +75,6 @@
       <div class="card">
         <div class="eyebrow">Name des Plans</div>
         <input class="pe-input" bind:value={planName}>
-        <div class="eyebrow" style="margin-top:14px">Ziel (Anzahl Einheiten)</div>
-        <input class="pe-input" type="number" min="1" bind:value={goal}>
       </div>
 
       {#if parsed.warnings.length}

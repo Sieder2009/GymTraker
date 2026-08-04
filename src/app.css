@@ -77,6 +77,16 @@ h2{font-family:'Sora';font-size:16px;font-weight:700;letter-spacing:-.2px}
   color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer;flex:none;
 }
 
+/* ---------- weekday picker ---------- */
+.dayrow{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.dayrow::-webkit-scrollbar{display:none}
+.daypill{
+  flex:none;min-width:42px;padding:8px 4px;border-radius:var(--r-sm);background:var(--card2);border:1px solid var(--line);
+  font-size:11.5px;font-weight:700;color:var(--mut);cursor:pointer;text-align:center;
+}
+.daypill.today{border-color:var(--accent);color:var(--accent)}
+.daypill.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+
 /* ---------- training / plain sets list ---------- */
 .plain-rest{color:var(--mut);font-size:14px;padding:50px 4px;text-align:center;line-height:1.6}
 
@@ -174,6 +184,20 @@ h2{font-family:'Sora';font-size:16px;font-weight:700;letter-spacing:-.2px}
 .pe-remove{width:34px;height:34px;border-radius:var(--r-sm);background:var(--card2);border:1px solid var(--line);color:var(--mut);cursor:pointer;font-size:15px;flex:none}
 .pe-empty{text-align:center;color:var(--mut);font-size:12.5px;padding:16px 0}
 .import-textarea{width:100%;resize:vertical;font-family:'Sora',monospace;font-size:12.5px;line-height:1.5}
+
+/* ---------- draggable weight ruler (ExerciseDetail) ---------- */
+.bigval{font-family:'Sora';font-size:40px;font-weight:800;letter-spacing:-1px;margin:6px 0 14px}
+.bigval span{font-size:16px;color:var(--mut);font-weight:600}
+.ruler{position:relative;height:64px;margin:0 -16px;overflow:hidden;cursor:grab;touch-action:pan-y}
+.ruler:active{cursor:grabbing}
+.ruler .track{position:absolute;top:10px;left:0;height:40px;display:flex;align-items:flex-end;will-change:transform}
+.tick{width:1.5px;background:var(--line);margin-right:10.5px;height:12px;flex:none;position:relative}
+.tick.major{height:22px;background:var(--mut)}
+.tick.major .tl{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--mut);font-weight:600}
+.ruler .needle{position:absolute;left:50%;top:4px;bottom:4px;width:2px;background:var(--accent);border-radius:2px;transform:translateX(-50%);z-index:2}
+.ruler .fadeL,.ruler .fadeR{position:absolute;top:0;bottom:0;width:50px;z-index:1;pointer-events:none}
+.ruler .fadeL{left:0;background:linear-gradient(90deg,var(--card),transparent)}
+.ruler .fadeR{right:0;background:linear-gradient(-90deg,var(--card),transparent)}
 
 /* ---------- strength (Bench/Deadlift/Squat) chart ---------- */
 .chart{width:100%;height:130px;display:block}

@@ -8,9 +8,16 @@
 
   const dispatch = createEventDispatcher();
 
+  const MIN = 0, MAX = 300, STEP = 2.5, PX_PER_TICK = 12; // must match .tick's CSS width+margin-right
+
   let idx = startIdx;
   let weightInput = 0;
   let repsInputs = [];
+  let rulerEl;
+  let containerWidth = 320;
+  let dragging = false;
+  let startX = 0;
+  let startValue = 0;
 
   function loadExercise(i) {
     idx = i;
@@ -18,13 +25,33 @@
     weightInput = e.sets[e.sets.length - 1]?.w ?? e.startW ?? 0;
     repsInputs = e.sets.map(() => '');
   }
-  onMount(() => loadExercise(startIdx));
+  onMount(() => {
+    loadExercise(startIdx);
+    containerWidth = rulerEl?.clientWidth || 320;
+  });
 
   $: ex = exercises[idx];
 
-  function step(delta) {
-    weightInput = Math.max(0, Math.round((weightInput + delta) * 2) / 2);
+  $: ticks = Array.from({ length: Math.round((MAX - MIN) / STEP) + 1 }, (_, i) => {
+    const v = MIN + i * STEP;
+    return { v, major: v % 20 === 0 };
+  });
+  $: trackX = containerWidth / 2 - ((weightInput - MIN) / STEP) * PX_PER_TICK;
+
+  function onPointerDown(e) {
+    dragging = true;
+    startX = e.clientX;
+    startValue = weightInput;
+    rulerEl.setPointerCapture(e.pointerId);
   }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const dx = e.clientX - startX; // drag right -> increase, drag left -> decrease
+    const v = startValue + (dx / PX_PER_TICK) * STEP;
+    weightInput = Math.min(MAX, Math.max(MIN, Math.round(v / STEP) * STEP));
+  }
+  function onPointerUp() { dragging = false; }
+
   function addSetRow() { repsInputs = [...repsInputs, '']; }
   function removeSetRow(i) { repsInputs = repsInputs.filter((_, j) => j !== i); }
 
@@ -53,19 +80,31 @@
 
   <div class="pe-scroll">
     <div class="card" style="text-align:center">
-      <div class="eyebrow">Aktuell</div>
-      <div style="font-family:'Sora';font-weight:800;font-size:32px;margin:4px 0 18px">
-        {fmt1(weightInput)}<span style="font-size:16px;font-weight:600"> kg</span>
-      </div>
+      <div class="eyebrow">Gewicht heute</div>
+      <div class="bigval">{fmt1(weightInput)}<span> kg</span></div>
 
-      <div class="eyebrow" style="text-align:left">Gewicht heute</div>
-      <div class="weight-adjust" style="margin:8px 0 4px">
-        <button class="stepbtn" on:click={() => step(-2.5)}>−</button>
-        <div class="wv">{fmt1(weightInput)} <span>kg</span></div>
-        <button class="stepbtn" on:click={() => step(2.5)}>+</button>
+      <div
+        class="ruler"
+        bind:this={rulerEl}
+        on:pointerdown={onPointerDown}
+        on:pointermove={onPointerMove}
+        on:pointerup={onPointerUp}
+        on:pointercancel={onPointerUp}
+      >
+        <div class="track" style="transform:translateX({trackX}px)">
+          {#each ticks as t}
+            <div class="tick" class:major={t.major}>
+              {#if t.major}<span class="tl">{t.v}</span>{/if}
+            </div>
+          {/each}
+        </div>
+        <div class="needle"></div>
+        <div class="fadeL"></div>
+        <div class="fadeR"></div>
       </div>
+      <p class="radar-hint" style="margin-top:6px">Zum Ändern nach links oder rechts ziehen</p>
 
-      <div class="eyebrow" style="text-align:left;margin-top:14px">Wiederholungen pro Satz</div>
+      <div class="eyebrow" style="text-align:left;margin-top:20px">Wiederholungen pro Satz</div>
       {#each repsInputs as r, i (i)}
         <div class="plain-set">
           <span class="plain-idx">{i + 1}</span>
@@ -86,7 +125,7 @@
         {#each ex.history as h}
           <div class="plain-set">
             <span class="progress-name">{h.weight > 0 ? fmt1(h.weight) + ' kg' : 'BW'}</span>
-            <span class="plain-r">{h.reps.map(formatRep).join('.')}</span>
+            <span class="plain-r">{h.reps.map(formatRep).join(' · ')}</span>
           </div>
         {/each}
       </div>

@@ -1,6 +1,6 @@
 <script>
   import { programs, trainState } from './stores.js';
-  import { WEEKDAYS, freshEx } from './data.js';
+  import { WEEKDAYS, freshEx, todayIndexForProgram } from './data.js';
   import { toast } from './toast.js';
 
   export let open = false;
@@ -9,7 +9,6 @@
     return {
       name: '',
       mode: 'weekday',
-      goal: 24,
       days: WEEKDAYS.map(l => ({ label: l, rest: true, exercises: [] })),
     };
   }
@@ -43,7 +42,6 @@
   function save() {
     const name = draft.name.trim();
     if (!name) { toast('Bitte einen Namen vergeben ✏️'); return; }
-    const goal = Math.max(1, +draft.goal || 24);
     const days = draft.days.map(d => ({
       label: d.label,
       rest: draft.mode === 'weekday' ? !!d.rest : false,
@@ -55,8 +53,9 @@
         }),
     }));
     const id = 'plan_' + Date.now();
-    programs.update(all => [...all, { id, name, mode: draft.mode, goal, completed: 0, currentDayIdx: 0, startDate: new Date().toISOString().slice(0, 10), days }]);
-    trainState.set({ activePlanId: id, viewedDayIdx: 0 });
+    const newPlan = { id, name, mode: draft.mode, completed: 0, currentDayIdx: 0, startDate: new Date().toISOString().slice(0, 10), days };
+    programs.update(all => [...all, newPlan]);
+    trainState.set({ activePlanId: id, viewedDayIdx: todayIndexForProgram(newPlan) });
     open = false;
     toast('Trainingsplan gespeichert ✅');
   }
@@ -79,9 +78,6 @@
         <button class="seg-btn" class:sel={draft.mode === 'weekday'} on:click={() => setMode('weekday')}>Nach Wochentag</button>
         <button class="seg-btn" class:sel={draft.mode === 'rotation'} on:click={() => setMode('rotation')}>Rotierende Routine</button>
       </div>
-
-      <div class="eyebrow" style="margin-top:16px">Ziel (Anzahl Einheiten)</div>
-      <input class="pe-input" type="number" min="1" bind:value={draft.goal}>
     </div>
 
     {#each draft.days as d, di}

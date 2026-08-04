@@ -7,6 +7,7 @@ import { WEEKDAYS, freshEx } from './data.js';
 // "Deadlift 2x3 nt muskelversagen" or "Klimmzüge 2x6-10".
 const SET_LINE = /^\d/;
 const DAY_HEADER = /^(\d+)\s*\.\s*Wochentag/i;
+const DIVIDER_LINE = /^[=\-_*]{3,}$/;
 const SCHEME = /(\d+)\s*x\s*([\d]+(?:\s*-\s*[\d]+)?)/i;
 const WEIGHT = /^(\d+(?:[.,]\d+)?)\s*kg/i;
 
@@ -79,6 +80,7 @@ export function parseLog(text) {
 
   for (const raw of lines) {
     if (!raw) continue;
+    if (DIVIDER_LINE.test(raw)) continue; // "====" / "----" section dividers, not an exercise
 
     const dayMatch = raw.match(DAY_HEADER);
     if (dayMatch) {
