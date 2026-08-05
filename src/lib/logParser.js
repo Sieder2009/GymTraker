@@ -68,21 +68,27 @@ function parseHistoryReps(line) {
 
 // Collects lines into exercise entries (name line -> following weight lines),
 // shared between day-scoped and "every training day" exercises.
+const DECORATIVE_NAME = /^[=\-_*.\s]*$/;
+
 function makeAccumulator(list, warnings, contextLabel) {
   let current = null;
   function flush() {
     if (current) {
-      if (current.weight === 0 && current.sawKg) {
-        warnings.push(`"${current.name}" (${contextLabel}): kein Gewicht erkannt, wird als Körpergewicht geführt.`);
+      const isEmptyDivider = DECORATIVE_NAME.test(current.name || '')
+        && current.weight === 0 && !current.history.length;
+      if (!isEmptyDivider) {
+        if (current.weight === 0 && current.sawKg) {
+          warnings.push(`"${current.name}" (${contextLabel}): kein Gewicht erkannt, wird als Körpergewicht geführt.`);
+        }
+        list.push({
+          name: current.name || 'Unbenannte Übung',
+          note: current.note,
+          sets: current.sets,
+          reps: current.reps,
+          weight: current.weight,
+          history: current.history,
+        });
       }
-      list.push({
-        name: current.name || 'Unbenannte Übung',
-        note: current.note,
-        sets: current.sets,
-        reps: current.reps,
-        weight: current.weight,
-        history: current.history,
-      });
     }
     current = null;
   }

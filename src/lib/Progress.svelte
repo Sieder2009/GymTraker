@@ -2,6 +2,7 @@
   import { programs, trainState } from './stores.js';
   import { fmt1, RADAR_CATEGORIES, muscleCategory } from './data.js';
   import RadarChart from './RadarChart.svelte';
+  import ThemeToggle from './ThemeToggle.svelte';
 
   $: plan = $programs.find(p => p.id === $trainState.activePlanId) || $programs[0];
 
@@ -31,6 +32,7 @@
     <h1>Fortschritt</h1>
     <div class="sub">{plan ? plan.name : ''}</div>
   </div>
+  <ThemeToggle />
 </div>
 
 <div class="radar-card">

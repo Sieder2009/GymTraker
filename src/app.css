@@ -15,6 +15,20 @@
   --r-md:12px;
   --r-sm:8px;
 }
+:root[data-theme="dark"]{
+  --bg:#101114;
+  --card:#1a1b1f;
+  --card2:#232428;
+  --line:#2d2e34;
+  --txt:#f2f2f4;
+  --mut:#8d8d96;
+  --accent:#5588ff;
+  --accent-soft:rgba(85,136,255,.16);
+  --teal:#1fd6a8;
+  --purple:#9585ff;
+  --yellow:#e0a83a;
+  --green:#35c98a;
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#app{height:100%}
 body{

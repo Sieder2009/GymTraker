@@ -5,6 +5,12 @@ import { defaultPrograms } from './data.js';
 // which of the 3 pages is active — not persisted, app always opens on Training
 export const activeScreen = writable('training');
 
+// light/dark — defaults to the OS preference on first launch, then remembers
+// whatever the user picked via the toggle
+const systemPrefersDark = typeof window !== 'undefined'
+  && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+export const theme = persisted('ironpeak:theme', systemPrefersDark ? 'dark' : 'light');
+
 // the user's saved training programs — this is what "speichern" refers to
 export const programs = persisted('ironpeak:programs', defaultPrograms());
 

@@ -8,6 +8,7 @@
   import ImportLog from './ImportLog.svelte';
   import WorkoutOverlay from './WorkoutOverlay.svelte';
   import ExerciseDetail from './ExerciseDetail.svelte';
+  import ThemeToggle from './ThemeToggle.svelte';
 
   let showAllPlans = false;
   let planPromptOpen = false;
@@ -20,7 +21,19 @@
   let edStartIdx = 0;
   let edSource = 'day'; // 'day' | 'daily'
 
+  // one-time cleanup: older imports (before the "====" divider parsing fix)
+  // could have left a decorative, fully empty exercise entry behind
+  function isEmptyDivider(ex) {
+    return /^[=\-_*.\s]*$/.test(ex.name || '')
+      && ex.sets.every(s => s.w === 0)
+      && !(ex.history && ex.history.length);
+  }
   onMount(() => {
+    programs.update(all => all.map(p => ({
+      ...p,
+      days: p.days.map(d => ({ ...d, exercises: d.exercises.filter(ex => !isEmptyDivider(ex)) })),
+      dailyExercises: (p.dailyExercises || []).filter(ex => !isEmptyDivider(ex)),
+    })));
     if ($programs.length > 1) planPromptOpen = true;
   });
 
@@ -122,7 +135,10 @@
       {#if plan}{day.rest ? 'Ruhetag' : day.label} · {plan.completed || 0} Workouts{/if}
     </div>
   </div>
-  <button class="allbtn" on:click={() => (showAllPlans = true)}>Alle Pläne</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <ThemeToggle />
+    <button class="allbtn" on:click={() => (showAllPlans = true)}>Alle Pläne</button>
+  </div>
 </div>
 
 {#if plan && plan.mode === 'weekday'}

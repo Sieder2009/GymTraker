@@ -6,7 +6,9 @@ bleiben **komplett lokal auf deinem PC** (`localStorage` im App-Fenster) —
 keine Cloud, kein Server, keine Internetverbindung nötig. Ein frischer
 Download startet mit einer leeren Planliste — du legst deinen eigenen Plan
 an, importierst dein eigenes Log oder lädst den mitgelieferten Beispielplan,
-um die App direkt mit echten Daten auszuprobieren.
+um die App direkt mit echten Daten auszuprobieren. Über das Sonne/Mond-Icon
+oben rechts lässt sich zwischen hellem und dunklem Design wechseln (merkt
+sich die Wahl, startet sonst nach der Systemeinstellung).
 
 ## Herunterladen & Verwenden
 

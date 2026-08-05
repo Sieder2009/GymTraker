@@ -2,6 +2,7 @@
   import { bigLifts } from './stores.js';
   import { fmt1 } from './data.js';
   import { toast } from './toast.js';
+  import ThemeToggle from './ThemeToggle.svelte';
 
   const LIFTS = [
     { key: 'bench', label: 'Bench Press', color: 'var(--teal)' },
@@ -45,6 +46,7 @@
 
 <div class="apphead">
   <div><h1>Kraft</h1><div class="sub">Fortschritt seit letztem PR</div></div>
+  <ThemeToggle />
 </div>
 
 {#each LIFTS as lift}
