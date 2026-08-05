@@ -8,8 +8,13 @@
 
   $: allEx = plan ? plan.days.flatMap(d => d.exercises || []) : [];
 
+  // matches only the main lift itself (incl. grip/stance variants like
+  // "Bankdrücken (eng)"), not accessory lifts like "Hack Squat" or
+  // "Bulgarian Split Squats" that merely contain the word
+  const BIG_THREE = /^(bench\s*press|bankdrücken|deadlift|kreuzheben|squats?)\b/i;
+
   $: rows = allEx
-    .filter(ex => ex.sets && ex.sets.length && ex.sets.some(s => s.w > 0))
+    .filter(ex => ex.sets && ex.sets.length && ex.sets.some(s => s.w > 0) && BIG_THREE.test(ex.name))
     .map(ex => {
       const now = ex.sets.reduce((m, s) => Math.max(m, s.w), 0);
       const start = ex.startW ?? now;
