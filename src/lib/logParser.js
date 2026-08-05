@@ -68,15 +68,16 @@ function parseHistoryReps(line) {
 
 // Collects lines into exercise entries (name line -> following weight lines),
 // shared between day-scoped and "every training day" exercises.
-const DECORATIVE_NAME = /^[=\-_*.\s]*$/;
-
 function makeAccumulator(list, warnings, contextLabel) {
   let current = null;
   function flush() {
     if (current) {
-      const isEmptyDivider = DECORATIVE_NAME.test(current.name || '')
-        && current.weight === 0 && !current.history.length;
-      if (!isEmptyDivider) {
+      // A name line with no weight line at all before the next one (e.g. two
+      // exercise-name lines in a row, or a decorative "====" divider that
+      // slipped through) leaves nothing to show — skip it instead of adding
+      // an empty card with no real history.
+      const isEmpty = current.weight === 0 && !current.sawKg && !current.history.length;
+      if (!isEmpty) {
         if (current.weight === 0 && current.sawKg) {
           warnings.push(`"${current.name}" (${contextLabel}): kein Gewicht erkannt, wird als Körpergewicht geführt.`);
         }
