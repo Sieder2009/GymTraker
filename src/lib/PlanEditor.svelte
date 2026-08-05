@@ -53,7 +53,7 @@
         }),
     }));
     const id = 'plan_' + Date.now();
-    const newPlan = { id, name, mode: draft.mode, completed: 0, currentDayIdx: 0, startDate: new Date().toISOString().slice(0, 10), days };
+    const newPlan = { id, name, mode: draft.mode, completed: 0, currentDayIdx: 0, startDate: new Date().toISOString().slice(0, 10), days, dailyExercises: [] };
     programs.update(all => [...all, newPlan]);
     trainState.set({ activePlanId: id, viewedDayIdx: todayIndexForProgram(newPlan) });
     open = false;

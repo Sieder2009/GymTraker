@@ -17,7 +17,7 @@ export const trainState = persisted('ironpeak:trainState', {
 // Bench/Deadlift/Squat: personal record + logged history per lift, shown on the "Kraft" tab
 export const BIG_LIFTS = ['bench', 'deadlift', 'squat'];
 export const bigLifts = persisted('ironpeak:bigLifts', {
-  bench: { pr: 0, history: [] },
-  deadlift: { pr: 0, history: [] },
-  squat: { pr: 0, history: [] },
+  bench: { pr: 0, prDate: null, history: [] },
+  deadlift: { pr: 0, prDate: null, history: [] },
+  squat: { pr: 0, prDate: null, history: [] },
 });

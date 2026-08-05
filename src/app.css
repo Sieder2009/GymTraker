@@ -95,6 +95,8 @@ h2{font-family:'Sora';font-size:16px;font-weight:700;letter-spacing:-.2px}
   border-radius:var(--r-md);padding:14px 14px 4px;
 }
 .plain-ex-name{font-family:'Sora';font-weight:700;font-size:15px;margin-bottom:8px;cursor:pointer}
+.ex-note{display:block;font-size:11.5px;font-weight:600;color:var(--accent);margin:-4px 0 8px}
+.note-line{font-size:12.5px;font-weight:600;color:var(--accent);text-align:center;margin:-8px 0 14px}
 
 .plain-setlist{display:flex;flex-direction:column}
 .plain-set{

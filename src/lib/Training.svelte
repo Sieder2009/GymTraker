@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { programs, trainState } from './stores.js';
   import { todayIndexForProgram, fmt1, WEEKDAYS_SHORT } from './data.js';
+  import { EXAMPLE_LOG } from './exampleLog.js';
   import { toast } from './toast.js';
   import PlanEditor from './PlanEditor.svelte';
   import ImportLog from './ImportLog.svelte';
@@ -12,9 +13,12 @@
   let planPromptOpen = false;
   let peOpen = false;
   let ilOpen = false;
+  let ilInitialText = '';
+  let ilInitialName = 'Importierter Plan';
   let woOpen = false;
   let edOpen = false;
   let edStartIdx = 0;
+  let edSource = 'day'; // 'day' | 'daily'
 
   onMount(() => {
     if ($programs.length > 1) planPromptOpen = true;
@@ -25,6 +29,8 @@
   $: dayIdx = plan ? (plan.mode === 'weekday' ? $trainState.viewedDayIdx : (plan.currentDayIdx || 0)) : 0;
   $: day = plan ? plan.days[dayIdx] : null;
   $: exercises = day && !day.rest ? day.exercises : [];
+  $: dailyExercises = plan && day && !day.rest ? (plan.dailyExercises || []) : [];
+  $: edExercises = edSource === 'daily' ? dailyExercises : exercises;
 
   function selectPlan(id) {
     const p = $programs.find(p => p.id === id);
@@ -41,34 +47,59 @@
   }
 
   function openNewPlan() { showAllPlans = false; peOpen = true; }
-  function openImport() { showAllPlans = false; ilOpen = true; }
+  function openImport() { showAllPlans = false; ilInitialText = ''; ilInitialName = 'Importierter Plan'; ilOpen = true; }
+  function openExample() { showAllPlans = false; ilInitialText = EXAMPLE_LOG; ilInitialName = 'Beispielplan (6er-Split)'; ilOpen = true; }
 
-  function adjustWeight(exIdx, setIdx, delta) {
+  function exerciseListOf(p, source) {
+    return source === 'daily' ? (p.dailyExercises || (p.dailyExercises = [])) : p.days[dayIdx].exercises;
+  }
+
+  function adjustWeight(source, exIdx, setIdx, delta) {
     programs.update(all => {
       const p = all.find(p => p.id === $trainState.activePlanId);
-      const ex = p.days[dayIdx].exercises[exIdx];
+      const ex = exerciseListOf(p, source)[exIdx];
       ex.sets[setIdx].w = Math.max(0, Math.round((ex.sets[setIdx].w + delta) * 2) / 2);
       return all;
     });
   }
 
-  function toggleSet(exIdx, setIdx) {
+  function toggleSet(source, exIdx, setIdx) {
     programs.update(all => {
       const p = all.find(p => p.id === $trainState.activePlanId);
-      const ex = p.days[dayIdx].exercises[exIdx];
+      const ex = exerciseListOf(p, source)[exIdx];
       if (!ex.done.includes(setIdx)) ex.done = [...ex.done, setIdx];
       return all;
     });
   }
 
-  function openExerciseDetail(exIdx) { edStartIdx = exIdx; edOpen = true; }
+  function openExerciseDetail(source, exIdx) { edSource = source; edStartIdx = exIdx; edOpen = true; }
 
   function saveExerciseLog(exIdx, weight, reps) {
     programs.update(all => {
       const p = all.find(p => p.id === $trainState.activePlanId);
-      const ex = p.days[dayIdx].exercises[exIdx];
+      const ex = exerciseListOf(p, edSource)[exIdx];
       ex.history = [...(ex.history || []), { weight, reps }];
       ex.sets = ex.sets.map(s => ({ ...s, w: weight }));
+      return all;
+    });
+  }
+
+  function renameExercise(exIdx, newName) {
+    programs.update(all => {
+      const p = all.find(p => p.id === $trainState.activePlanId);
+      exerciseListOf(p, edSource)[exIdx].name = newName;
+      return all;
+    });
+  }
+
+  function importExerciseHistory(exIdx, weight, history) {
+    programs.update(all => {
+      const p = all.find(p => p.id === $trainState.activePlanId);
+      const ex = exerciseListOf(p, edSource)[exIdx];
+      ex.history = [...(ex.history || []), ...history];
+      if (weight > ex.sets.reduce((m, s) => Math.max(m, s.w), 0)) {
+        ex.sets = ex.sets.map(s => ({ ...s, w: weight }));
+      }
       return all;
     });
   }
@@ -107,6 +138,7 @@
     <p class="plain-rest" style="margin-bottom:16px">Noch kein Trainingsplan angelegt.</p>
     <button class="cta" on:click={openNewPlan}>+ Neuer Plan</button>
     <button class="cta ghost" style="margin-top:10px" on:click={openImport}>📄 Log importieren</button>
+    <button class="cta ghost" style="margin-top:10px" on:click={openExample}>⭐ Beispielplan laden</button>
   </div>
 {:else if day.rest}
   <p class="plain-rest">Heute ist Ruhetag.<br>Kein Training eingetragen.</p>
@@ -117,22 +149,52 @@
       Workout starten
     </button>
   {/if}
+
+  {#if dailyExercises.length}
+    <div class="section-title">Jeden Trainingstag</div>
+    {#each dailyExercises as ex, exIdx}
+      <div class="plain-ex">
+        <div
+          class="plain-ex-name"
+          role="button"
+          tabindex="0"
+          on:click={() => openExerciseDetail('daily', exIdx)}
+          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openExerciseDetail('daily', exIdx); } }}
+        >{ex.name}</div>
+        {#if ex.note}<span class="ex-note">{ex.note}</span>{/if}
+        <div class="plain-setlist">
+          {#each ex.sets as s, setIdx}
+            <div class="plain-set">
+              <span class="plain-idx">{setIdx + 1}</span>
+              <button class="plain-step" on:click={() => adjustWeight('daily', exIdx, setIdx, -2.5)}>−</button>
+              <span class="plain-w">{s.w > 0 ? fmt1(s.w) + ' kg' : 'BW'}</span>
+              <button class="plain-step" on:click={() => adjustWeight('daily', exIdx, setIdx, 2.5)}>+</button>
+              <span class="plain-r">× {s.r}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/each}
+    <div class="section-title">Heutiger Tag</div>
+  {/if}
+
   {#each exercises as ex, exIdx}
     <div class="plain-ex">
       <div
         class="plain-ex-name"
         role="button"
         tabindex="0"
-        on:click={() => openExerciseDetail(exIdx)}
-        on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openExerciseDetail(exIdx); } }}
+        on:click={() => openExerciseDetail('day', exIdx)}
+        on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openExerciseDetail('day', exIdx); } }}
       >{ex.name}</div>
+      {#if ex.note}<span class="ex-note">{ex.note}</span>{/if}
       <div class="plain-setlist">
         {#each ex.sets as s, setIdx}
           <div class="plain-set">
             <span class="plain-idx">{setIdx + 1}</span>
-            <button class="plain-step" on:click={() => adjustWeight(exIdx, setIdx, -2.5)}>−</button>
+            <button class="plain-step" on:click={() => adjustWeight('day', exIdx, setIdx, -2.5)}>−</button>
             <span class="plain-w">{s.w > 0 ? fmt1(s.w) + ' kg' : 'BW'}</span>
-            <button class="plain-step" on:click={() => adjustWeight(exIdx, setIdx, 2.5)}>+</button>
+            <button class="plain-step" on:click={() => adjustWeight('day', exIdx, setIdx, 2.5)}>+</button>
             <span class="plain-r">× {s.r}</span>
           </div>
         {/each}
@@ -190,6 +252,7 @@
       {/each}
       <button class="cta ghost" style="margin-top:14px" on:click={openNewPlan}>+ Neuer Plan</button>
       <button class="cta ghost" style="margin-top:10px" on:click={openImport}>📄 Log importieren</button>
+      <button class="cta ghost" style="margin-top:10px" on:click={openExample}>⭐ Beispielplan laden</button>
     </div>
   </div>
 {/if}
@@ -197,8 +260,8 @@
 {#if woOpen && plan}
   <WorkoutOverlay
     exercises={exercises}
-    onAdjust={adjustWeight}
-    onToggle={toggleSet}
+    onAdjust={(exIdx, setIdx, delta) => adjustWeight('day', exIdx, setIdx, delta)}
+    onToggle={(exIdx, setIdx) => toggleSet('day', exIdx, setIdx)}
     on:finish={finishWorkout}
     on:close={() => (woOpen = false)}
   />
@@ -206,12 +269,14 @@
 
 {#if edOpen && plan}
   <ExerciseDetail
-    exercises={exercises}
+    exercises={edExercises}
     startIdx={edStartIdx}
     onSave={saveExerciseLog}
+    onRename={renameExercise}
+    onImportHistory={importExerciseHistory}
     on:close={() => (edOpen = false)}
   />
 {/if}
 
 <PlanEditor bind:open={peOpen} />
-<ImportLog bind:open={ilOpen} />
+<ImportLog bind:open={ilOpen} initialText={ilInitialText} initialName={ilInitialName} />

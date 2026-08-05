@@ -1,19 +1,25 @@
 <script>
-  import { programs, trainState } from './stores.js';
-  import { parseLog, toWeekdayPlan } from './logParser.js';
-  import { todayIndexForProgram } from './data.js';
+  import { programs, trainState, bigLifts } from './stores.js';
+  import { parseLog, toWeekdayPlan, toDailyExercises } from './logParser.js';
+  import { todayIndexForProgram, fmt1 } from './data.js';
   import { toast } from './toast.js';
 
   export let open = false;
+  export let initialText = ''; // prefills + auto-analyzes, e.g. for the bundled example plan
+  export let initialName = 'Importierter Plan';
 
   let rawText = '';
-  let parsed = null; // { days, warnings }
+  let parsed = null; // { days, dailyExercises, pr, warnings }
   let planName = 'Importierter Plan';
   let fileInput;
 
   $: if (!open) {
     parsed = null;
     rawText = '';
+  } else if (initialText && !parsed) {
+    rawText = initialText;
+    planName = initialName;
+    parsed = parseLog(rawText);
   }
 
   function onFile(e) {
@@ -33,15 +39,28 @@
     if (!parsed || !parsed.days.length) return;
     const name = planName.trim() || 'Importierter Plan';
     const days = toWeekdayPlan(parsed.days);
+    const dailyExercises = toDailyExercises(parsed.dailyExercises);
     const id = 'imported_' + Date.now();
     const newPlan = {
       id, name, mode: 'weekday',
       completed: 0, currentDayIdx: 0,
       startDate: new Date().toISOString().slice(0, 10),
-      days,
+      days, dailyExercises,
     };
     programs.update(all => [...all, newPlan]);
     trainState.set({ activePlanId: id, viewedDayIdx: todayIndexForProgram(newPlan) });
+
+    const { bench, deadlift, squat, date } = parsed.pr;
+    if (bench || deadlift || squat) {
+      bigLifts.update(all => {
+        const next = { ...all };
+        if (bench) next.bench = { ...next.bench, pr: bench, prDate: date || next.bench.prDate };
+        if (deadlift) next.deadlift = { ...next.deadlift, pr: deadlift, prDate: date || next.deadlift.prDate };
+        if (squat) next.squat = { ...next.squat, pr: squat, prDate: date || next.squat.prDate };
+        return next;
+      });
+    }
+
     toast('Log importiert ✅');
     open = false;
     rawText = '';
@@ -82,6 +101,24 @@
           <div class="eyebrow" style="color:var(--yellow)">Hinweise ({parsed.warnings.length})</div>
           {#each parsed.warnings as w}
             <p class="radar-hint" style="text-align:left;margin-top:6px">{w}</p>
+          {/each}
+        </div>
+      {/if}
+
+      {#if parsed.pr.bench || parsed.pr.deadlift || parsed.pr.squat}
+        <div class="card">
+          <div class="eyebrow">Erkannte Personal Records{parsed.pr.date ? ' · ' + parsed.pr.date.split('-').reverse().join('.') : ''}</div>
+          {#if parsed.pr.bench}<p class="radar-hint" style="text-align:left;margin-top:6px">Bench Press: {fmt1(parsed.pr.bench)} kg</p>{/if}
+          {#if parsed.pr.deadlift}<p class="radar-hint" style="text-align:left;margin-top:2px">Deadlift: {fmt1(parsed.pr.deadlift)} kg</p>{/if}
+          {#if parsed.pr.squat}<p class="radar-hint" style="text-align:left;margin-top:2px">Squat: {fmt1(parsed.pr.squat)} kg</p>{/if}
+        </div>
+      {/if}
+
+      {#if parsed.dailyExercises.length}
+        <div class="card">
+          <div class="eyebrow">Jeden Trainingstag ({parsed.dailyExercises.length})</div>
+          {#each parsed.dailyExercises as ex}
+            <p class="radar-hint" style="text-align:left;margin-top:6px">{ex.name}</p>
           {/each}
         </div>
       {/if}

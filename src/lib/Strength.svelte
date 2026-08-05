@@ -12,6 +12,12 @@
   let prInputs = { bench: '', deadlift: '', squat: '' };
   let entryInputs = { bench: '', deadlift: '', squat: '' };
 
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
   $: for (const l of LIFTS) {
     if (prInputs[l.key] === '') prInputs[l.key] = $bigLifts[l.key].pr || '';
   }
@@ -77,10 +83,13 @@
       </svg>
       <div class="legend">
         <span><i style="background:var(--accent)"></i>Eintrag</span>
-        {#if data.pr > 0}<span><i style={`background:${lift.color}`}></i>PR {fmt1(data.pr)} kg</span>{/if}
+        {#if data.pr > 0}<span><i style={`background:${lift.color}`}></i>PR {fmt1(data.pr)} kg{data.prDate ? ' · ' + fmtDate(data.prDate) : ''}</span>{/if}
       </div>
     {:else}
       <p class="radar-hint" style="text-align:left;margin-top:10px">Noch keine Einträge — trag deinen aktuellen Wert unten ein.</p>
+      {#if data.pr > 0}
+        <div class="legend"><span><i style={`background:${lift.color}`}></i>PR {fmt1(data.pr)} kg{data.prDate ? ' · ' + fmtDate(data.prDate) : ''}</span></div>
+      {/if}
     {/if}
 
     <div style="display:flex;gap:8px;margin-top:12px">

@@ -1,10 +1,10 @@
 export const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 export const WEEKDAYS_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-export function freshEx(name, muscle, rest, sets, history = []) {
+export function freshEx(name, muscle, rest, sets, history = [], note = '') {
   const clonedSets = sets.map((s) => ({ ...s }));
   const startW = clonedSets.reduce((m, s) => Math.max(m, s.w), 0);
-  return { name, muscle, rest, sets: clonedSets, done: [], startW, history: history.map((h) => ({ ...h })) };
+  return { name, muscle, rest, sets: clonedSets, done: [], startW, history: history.map((h) => ({ ...h })), note };
 }
 
 // Ein frischer Download hat noch keine eigenen Trainingspläne — der Nutzer
