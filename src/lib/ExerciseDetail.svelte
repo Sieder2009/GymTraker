@@ -60,6 +60,7 @@
   }
 
   $: ex = exercises[idx];
+  $: hasRepsEntered = repsInputs.some((r) => r !== '');
 
   $: ticks = Array.from({ length: Math.round((MAX - MIN) / STEP) + 1 }, (_, i) => {
     const v = MIN + i * STEP;
@@ -161,18 +162,23 @@
 
     {#if ex.history?.length}
       <div class="eyebrow" style="margin:20px 4px 8px">Verlauf</div>
-      <div class="plain-ex">
-        {#each ex.history as h}
-          <div class="plain-set">
-            <span class="progress-name">{h.weight > 0 ? fmt1(h.weight) + ' kg' : 'BW'}</span>
-            <span class="plain-r">{h.reps.map(formatRep).join(' · ')}</span>
+      {#each ex.history as h}
+        <div class="plain-ex hist-card">
+          <div class="hist-w">{h.weight > 0 ? fmt1(h.weight) + ' kg' : 'BW'}</div>
+          <div class="plain-setlist">
+            {#each h.reps as r, i}
+              <div class="plain-set">
+                <span class="plain-idx">{i + 1}</span>
+                <span class="plain-r" style="margin-left:0">× {formatRep(r)}</span>
+              </div>
+            {/each}
           </div>
-        {/each}
-      </div>
+        </div>
+      {/each}
       <p class="radar-hint" style="text-align:left;margin-top:8px">X = weniger Gewicht verwendet · M = mehr Gewicht verwendet · ✓ = erledigt, ohne Wiederholungszahl</p>
     {/if}
 
-    {#if onImportHistory}
+    {#if onImportHistory && !hasRepsEntered}
       {#if !historyPasteOpen}
         <button class="cta ghost" style="margin-top:14px" on:click={() => (historyPasteOpen = true)}>+ Verlauf einfügen</button>
       {:else}
