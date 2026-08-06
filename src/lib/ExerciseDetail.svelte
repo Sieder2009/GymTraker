@@ -162,13 +162,16 @@
 
     {#if ex.history?.length}
       <div class="eyebrow" style="margin:20px 4px 8px">Verlauf</div>
-      {#each ex.history as h}
-        <div class="plain-ex hist-card">
-          <div class="hist-w">{h.weight > 0 ? fmt1(h.weight) + ' kg' : 'BW'}</div>
+      {#each [...ex.history].reverse() as h, i}
+        <div class="plain-ex hist-card" class:hist-latest={i === 0}>
+          <div class="hist-w">
+            {h.weight > 0 ? fmt1(h.weight) + ' kg' : 'BW'}
+            {#if i === 0}<span class="hist-badge">Aktuell</span>{/if}
+          </div>
           <div class="plain-setlist">
-            {#each h.reps as r, i}
+            {#each h.reps as r, j}
               <div class="plain-set">
-                <span class="plain-idx">{i + 1}</span>
+                <span class="plain-idx">{j + 1}</span>
                 <span class="plain-r" style="margin-left:0">× {formatRep(r)}</span>
               </div>
             {/each}

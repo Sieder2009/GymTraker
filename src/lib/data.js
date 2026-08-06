@@ -22,17 +22,6 @@ export function todayIndexForProgram(p) {
   return p.currentDayIdx || 0;
 }
 
-export const RADAR_CATEGORIES = ['Beine', 'Rücken', 'Brust', 'Schulter', 'Arme'];
-
-export function muscleCategory(tag) {
-  if (tag === 'Beine') return 'Beine';
-  if (tag === 'Rücken' || tag === 'Lat' || tag === 'Griffkraft') return 'Rücken';
-  if (tag === 'Brust') return 'Brust';
-  if (tag === 'Schulter') return 'Schulter';
-  if (tag === 'Bizeps' || tag === 'Trizeps') return 'Arme';
-  return null; // bodyweight/skill work (Core, Skill) has no weight metric — excluded from the radar
-}
-
 export function daysSince(dateStr) {
   const start = new Date(dateStr + 'T00:00:00');
   const now = new Date();

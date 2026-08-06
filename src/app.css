@@ -111,7 +111,10 @@ h2{font-family:'Sora';font-size:16px;font-weight:700;letter-spacing:-.2px}
 .plain-ex-name{font-family:'Sora';font-weight:700;font-size:15px;margin-bottom:8px;cursor:pointer}
 
 .hist-card{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--accent);padding:10px 14px 2px;margin-bottom:8px}
-.hist-w{font-family:'Sora';font-weight:700;font-size:13px;color:var(--mut);margin-bottom:6px}
+.hist-w{font-family:'Sora';font-weight:700;font-size:13px;color:var(--mut);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.hist-latest{border-left-color:var(--green)}
+.hist-latest .hist-w{color:var(--txt)}
+.hist-badge{font-family:'Inter';font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green);background:rgba(53,201,138,.14);padding:2px 8px;border-radius:20px}
 .ex-note{display:block;font-size:11.5px;font-weight:600;color:var(--accent);margin:-4px 0 8px}
 .note-line{font-size:12.5px;font-weight:600;color:var(--accent);text-align:center;margin:-8px 0 14px}
 
