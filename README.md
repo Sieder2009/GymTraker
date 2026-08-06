@@ -1,16 +1,37 @@
 # Ironpeak Fitness
 
-Eine Windows-Desktop-App (Vite + Svelte + Electron) für Trainingspläne,
-Kraft-Fortschritt (Bench/Deadlift/Squat) und Muskelgruppen-Balance. Alle Daten
-bleiben **komplett lokal auf deinem PC** (`localStorage` im App-Fenster) —
-keine Cloud, kein Server, keine Internetverbindung nötig. Ein frischer
-Download startet mit einer leeren Planliste — du legst deinen eigenen Plan
-an, importierst dein eigenes Log oder lädst den mitgelieferten Beispielplan,
-um die App direkt mit echten Daten auszuprobieren. Über das Sonne/Mond-Icon
-oben rechts lässt sich zwischen hellem und dunklem Design wechseln (merkt
-sich die Wahl, startet sonst nach der Systemeinstellung).
+Eine App (Vite + Svelte) für Trainingspläne, Kraft-Fortschritt (Bench/
+Deadlift/Squat) und Muskelgruppen-Balance — als Windows-Desktop-App
+(Electron) **und** als installierbare Web-App fürs Handy. Alle Daten
+bleiben **komplett lokal auf deinem Gerät** (`localStorage`) — keine Cloud,
+kein eigener Server nötig. Ein frischer Start beginnt mit einer leeren
+Planliste — du legst deinen eigenen Plan an, importierst dein eigenes Log
+oder lädst den mitgelieferten Beispielplan, um die App direkt mit echten
+Daten auszuprobieren. Über das Sonne/Mond-Icon oben rechts lässt sich
+zwischen hellem und dunklem Design wechseln (merkt sich die Wahl, startet
+sonst nach der Systemeinstellung).
 
-## Herunterladen & Verwenden
+## Auf dem Handy installieren
+
+Die App läuft als [GitHub Pages](https://sieder2009.github.io/GymTraker/) —
+kostenlos von GitHub gehostet, du musst nichts selbst betreiben. Nur der
+App-Code liegt dort; deine Trainingsdaten bleiben ausschließlich im
+`localStorage` deines Handy-Browsers.
+
+1. Im Handy-Browser öffnen: **https://sieder2009.github.io/GymTraker/**
+2. **iOS (Safari):** Teilen-Symbol → "Zum Home-Bildschirm".
+   **Android (Chrome):** Menü (⋮) → "App installieren" bzw. "Zum
+   Startbildschirm hinzufügen".
+3. Die App startet danach wie eine echte App, vollflächig ohne Browser-
+   Leiste, und funktioniert auch offline (nur das erste Laden braucht
+   Internet).
+
+Jeder Push auf `master` veröffentlicht automatisch die neueste Version über
+GitHub Actions — siehe `.github/workflows/pages.yml`. Damit das läuft, muss
+in den Repo-Einstellungen unter **Settings → Pages → Source** einmalig
+**"GitHub Actions"** ausgewählt werden.
+
+## Windows-Desktop-App herunterladen
 
 1. Auf der **[Releases-Seite](../../releases)** dieses Repos die neueste
    `Ironpeak-Fitness-*-portable.exe` herunterladen.
@@ -97,6 +118,11 @@ welcher davon heute genutzt werden soll.
 electron/
   main.cjs             Electron-Hauptprozess (öffnet das App-Fenster)
   preload.cjs
+public/
+  manifest.json        Web-App-Manifest (Handy-Installation)
+  icon.svg, icon-*.png Icons fürs Manifest / Home-Bildschirm
+scripts/
+  gen-icons.mjs        Erzeugt die icon-*.png aus icon.svg (bei Bedarf erneut ausführen)
 src/
   main.js              Einstiegspunkt
   App.svelte           Bildschirm-Umschaltung + Tabbar
