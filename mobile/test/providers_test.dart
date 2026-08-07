@@ -75,6 +75,10 @@ void main() {
         startDate: '2026-01-01',
         days: [],
       ));
+      // _persist() fires the write without awaiting it (matches the real
+      // app, which never blocks UI handlers on persistence) — give that
+      // pending write a chance to land before reading it back.
+      await Future<void>.delayed(Duration.zero);
 
       final storageB = await StorageService.create();
       final providerB = ProgramsProvider(storageB);
