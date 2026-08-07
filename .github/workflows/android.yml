@@ -27,6 +27,11 @@ jobs:
       # generated fresh each run against whatever Flutter version CI installs.
       - run: flutter create --org com.ironpeak --platforms=android .
 
+      # flutter create also (re-)adds its default counter-app template test,
+      # which references a `MyApp` class that doesn't exist in this project
+      # (ours is `IronpeakApp`) — remove it, our own test/ files stay.
+      - run: rm -f test/widget_test.dart
+
       - run: flutter pub get
 
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
