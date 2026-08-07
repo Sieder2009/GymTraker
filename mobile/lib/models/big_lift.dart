@@ -1,14 +1,16 @@
 class BigLiftPoint {
-  BigLiftPoint({required this.l, required this.v});
+  BigLiftPoint({required this.l, required this.v, this.date});
 
   String l; // unpadded 'D.M' date label (today's day.month at time of entry)
   double v;
+  String? date; // ISO 'YYYY-MM-DD' — nullable so older/imported points still decode
 
-  Map<String, dynamic> toJson() => {'l': l, 'v': v};
+  Map<String, dynamic> toJson() => {'l': l, 'v': v, 'date': date};
 
   factory BigLiftPoint.fromJson(Map<String, dynamic> json) => BigLiftPoint(
         l: json['l'] as String,
         v: (json['v'] as num).toDouble(),
+        date: json['date'] as String?,
       );
 }
 

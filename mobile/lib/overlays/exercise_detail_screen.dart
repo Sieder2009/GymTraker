@@ -110,6 +110,35 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     context.read<ToastProvider>().show('Verlauf übernommen ✅');
   }
 
+  Future<void> _openWeightKeyboardEntry() async {
+    final controller = TextEditingController(text: _weight > 0 ? fmt1(_weight) : '');
+    final result = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gewicht eingeben'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(suffixText: 'kg'),
+          // Komma und Punkt sollen beide als Dezimaltrennzeichen funktionieren.
+          onSubmitted: (v) => Navigator.of(ctx).pop(double.tryParse(v.replaceAll(',', '.'))),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Abbrechen')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx)
+                .pop(double.tryParse(controller.text.replaceAll(',', '.'))),
+            child: const Text('Übernehmen'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result >= 0) {
+      setState(() => _weight = result);
+    }
+  }
+
   void _addSetRow() {
     setState(() => _repsControllers.add(TextEditingController()));
   }
@@ -182,10 +211,24 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                   style: TextStyle(color: colors.accent, fontWeight: FontWeight.w600),
                 ),
               ),
+            Center(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+                onTap: _openWeightKeyboardEntry,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text(
+                    _weight > 0 ? '${fmt1(_weight)} kg' : 'BW',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
             WeightRuler(value: _weight, onChanged: (v) => setState(() => _weight = v)),
             Center(
               child: Text(
-                'Zum Ändern nach links oder rechts ziehen',
+                'Ziehen zum Anpassen, oder auf die Zahl tippen zum Eintippen',
                 style: TextStyle(color: colors.mut, fontSize: 11.5),
               ),
             ),

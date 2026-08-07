@@ -7,6 +7,9 @@ import '../services/update_service.dart';
 import '../state/appearance_provider.dart';
 import '../theme/app_colors.dart';
 
+const String _kHelpEmail = 'thomasjohann09@gmail.com';
+const String _kHelpPhone = '3914126668';
+
 const List<Color> _kColorPresets = [
   Color(0xFF2F6FEB),
   Color(0xFF5588FF),
@@ -46,6 +49,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _openRelease(String url) async {
     final uri = Uri.parse(url);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _sendEmail() async {
+    final uri = Uri(scheme: 'mailto', path: _kHelpEmail);
+    await launchUrl(uri);
+  }
+
+  Future<void> _call() async {
+    final uri = Uri(scheme: 'tel', path: _kHelpPhone);
+    await launchUrl(uri);
   }
 
   @override
@@ -135,6 +148,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text('HILFE', style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 8),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline),
+                    title: const Text('E-Mail'),
+                    subtitle: const Text(_kHelpEmail),
+                    onTap: _sendEmail,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.call_outlined),
+                    title: const Text('Anrufen'),
+                    subtitle: const Text(_kHelpPhone),
+                    onTap: _call,
+                  ),
+                ],
               ),
             ),
           ],

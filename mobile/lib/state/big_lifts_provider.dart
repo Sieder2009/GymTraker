@@ -35,7 +35,9 @@ class BigLiftsProvider extends ChangeNotifier {
 
   void addEntry(String key, double value) {
     if (value <= 0) return;
-    _lifts.byKey(key).history.add(BigLiftPoint(l: todayShortLabel(), v: value));
+    _lifts.byKey(key).history.add(
+          BigLiftPoint(l: todayShortLabel(), v: value, date: todayIso()),
+        );
     _persist();
     notifyListeners();
   }
