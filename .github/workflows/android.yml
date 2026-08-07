@@ -6,9 +6,6 @@ on:
       - master
     tags:
       - 'v*.*.*'
-    paths:
-      - 'mobile/**'
-      - '.github/workflows/android.yml'
 
 permissions:
   contents: write
