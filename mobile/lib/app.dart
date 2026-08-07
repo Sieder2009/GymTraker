@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'services/storage_service.dart';
 import 'state/active_screen_provider.dart';
+import 'state/appearance_provider.dart';
 import 'state/big_lifts_provider.dart';
 import 'state/programs_provider.dart';
 import 'state/theme_provider.dart';
@@ -29,14 +30,21 @@ class IronpeakApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BigLiftsProvider(storage)),
         ChangeNotifierProvider(create: (_) => ActiveScreenProvider()),
         ChangeNotifierProvider(create: (_) => ToastProvider()),
+        ChangeNotifierProvider(create: (_) => AppearanceProvider(storage)),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, theme, _) {
+      child: Consumer2<ThemeProvider, AppearanceProvider>(
+        builder: (context, theme, appearance, _) {
           return MaterialApp(
             title: 'Ironpeak Fitness',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
+            theme: AppTheme.light(
+              accentOverride: appearance.accent,
+              secondaryOverride: appearance.secondary,
+            ),
+            darkTheme: AppTheme.dark(
+              accentOverride: appearance.accent,
+              secondaryOverride: appearance.secondary,
+            ),
             themeMode: theme.isDark ? ThemeMode.dark : ThemeMode.light,
             home: const AppShell(),
           );

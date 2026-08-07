@@ -7,9 +7,20 @@ import 'app_radii.dart';
 /// Sora for headings/big numbers, Inter for body text — same pairing as the
 /// original's two Google Fonts (`app.css` / `index.html`).
 class AppTheme {
-  static ThemeData light() => _build(AppColors.light, Brightness.light);
+  static ThemeData light({Color? accentOverride, Color? secondaryOverride}) => _build(
+        _applyOverrides(AppColors.light, accentOverride, secondaryOverride),
+        Brightness.light,
+      );
 
-  static ThemeData dark() => _build(AppColors.dark, Brightness.dark);
+  static ThemeData dark({Color? accentOverride, Color? secondaryOverride}) => _build(
+        _applyOverrides(AppColors.dark, accentOverride, secondaryOverride),
+        Brightness.dark,
+      );
+
+  static AppColors _applyOverrides(AppColors base, Color? accent, Color? secondary) {
+    if (accent == null && secondary == null) return base;
+    return base.copyWith(accent: accent, secondary: secondary);
+  }
 
   static ThemeData _build(AppColors colors, Brightness brightness) {
     final base = ThemeData(brightness: brightness, useMaterial3: true);
@@ -27,7 +38,7 @@ class AppTheme {
         onSurface: colors.txt,
         primary: colors.accent,
         onPrimary: Colors.white,
-        secondary: colors.accent,
+        secondary: colors.secondary,
         error: colors.yellow,
       ),
       extensions: [colors],
@@ -85,8 +96,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: colors.card2,
-          foregroundColor: colors.txt,
-          side: BorderSide(color: colors.line),
+          foregroundColor: colors.secondary,
+          side: BorderSide(color: colors.secondary),
           textStyle: GoogleFonts.sora(fontWeight: FontWeight.w700, fontSize: 14.5),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(

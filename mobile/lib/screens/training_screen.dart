@@ -8,6 +8,7 @@ import '../models/program.dart';
 import '../overlays/exercise_detail_screen.dart';
 import '../overlays/import_log_screen.dart';
 import '../overlays/plan_editor_screen.dart';
+import '../overlays/settings_screen.dart';
 import '../overlays/workout_overlay_screen.dart';
 import '../state/programs_provider.dart';
 import '../state/train_state_provider.dart';
@@ -136,6 +137,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       await showPlanPicker(context, programs: programs, activeId: plan.id);
                   if (chosen != null) _selectPlan(chosen);
                 },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Einstellungen',
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  fullscreenDialog: true,
+                  builder: (_) => const SettingsScreen(),
+                )),
               ),
             ],
           ),

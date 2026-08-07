@@ -15,6 +15,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.mut,
     required this.accent,
     required this.accentSoft,
+    required this.secondary,
     required this.teal,
     required this.purple,
     required this.yellow,
@@ -29,6 +30,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color mut;
   final Color accent;
   final Color accentSoft;
+  final Color secondary;
   final Color teal;
   final Color purple;
   final Color yellow;
@@ -43,6 +45,7 @@ class AppColors extends ThemeExtension<AppColors> {
     mut: Color(0xFF84848C),
     accent: Color(0xFF2F6FEB),
     accentSoft: Color(0x1A2F6FEB), // rgba(47,111,235,.10)
+    secondary: Color(0xFF0EA884),
     teal: Color(0xFF0EA884),
     purple: Color(0xFF6D5CE8),
     yellow: Color(0xFFC98A10),
@@ -58,6 +61,7 @@ class AppColors extends ThemeExtension<AppColors> {
     mut: Color(0xFF8D8D96),
     accent: Color(0xFF5588FF),
     accentSoft: Color(0x295588FF), // rgba(85,136,255,.16)
+    secondary: Color(0xFF1FD6A8),
     teal: Color(0xFF1FD6A8),
     purple: Color(0xFF9585FF),
     yellow: Color(0xFFE0A83A),
@@ -74,6 +78,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? mut,
     Color? accent,
     Color? accentSoft,
+    Color? secondary,
     Color? teal,
     Color? purple,
     Color? yellow,
@@ -88,6 +93,7 @@ class AppColors extends ThemeExtension<AppColors> {
       mut: mut ?? this.mut,
       accent: accent ?? this.accent,
       accentSoft: accentSoft ?? this.accentSoft,
+      secondary: secondary ?? this.secondary,
       teal: teal ?? this.teal,
       purple: purple ?? this.purple,
       yellow: yellow ?? this.yellow,
@@ -107,6 +113,7 @@ class AppColors extends ThemeExtension<AppColors> {
       mut: Color.lerp(mut, other.mut, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
       accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
+      secondary: Color.lerp(secondary, other.secondary, t)!,
       teal: Color.lerp(teal, other.teal, t)!,
       purple: Color.lerp(purple, other.purple, t)!,
       yellow: Color.lerp(yellow, other.yellow, t)!,
