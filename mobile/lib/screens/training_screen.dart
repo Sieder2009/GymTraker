@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../analytics/analytics_engine.dart';
 import '../data/constants.dart';
 import '../data/example_log.dart';
+import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/program.dart';
 import '../overlays/exercise_detail_screen.dart';
@@ -10,13 +13,39 @@ import '../overlays/import_log_screen.dart';
 import '../overlays/plan_editor_screen.dart';
 import '../overlays/settings_screen.dart';
 import '../overlays/workout_overlay_screen.dart';
+import '../state/big_lifts_provider.dart';
+import '../state/health_provider.dart';
 import '../state/programs_provider.dart';
 import '../state/train_state_provider.dart';
+import '../state/workout_history_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_shell.dart';
+import '../widgets/backup_sheet.dart';
 import '../widgets/day_pill_selector.dart';
 import '../widgets/exercise_card.dart';
+import '../widgets/language_picker_sheet.dart';
 import '../widgets/plan_picker_sheet.dart';
 import '../widgets/theme_toggle_button.dart';
+import 'calendar_screen.dart';
+import 'gallery_screen.dart';
+
+String _greeting(AppLocalizations t) {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return t.greetingMorning;
+  if (hour < 18) return t.greetingAfternoon;
+  return t.greetingEvening;
+}
+
+/// Rough estimate only (no per-exercise timing data exists) — roughly 3
+/// minutes per set including rest, matching the guided workout's typical
+/// pace. Shown with a "~" prefix so it never reads as a precise number.
+int _estimateWorkoutMinutes(List<Exercise> exercises) {
+  var sets = 0;
+  for (final e in exercises) {
+    sets += e.sets.length;
+  }
+  return sets * 3;
+}
 
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({super.key});
@@ -44,6 +73,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
       context,
       programs: programs,
       activeId: trainState.activePlanId,
+      onDelete: _deletePlan,
       isDismissible: false,
     );
     if (chosen != null) _selectPlan(chosen);
@@ -52,6 +82,20 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _selectPlan(Program p) {
     final idx = todayIndexForProgram(mode: p.mode, currentDayIdx: p.currentDayIdx);
     context.read<TrainStateProvider>().selectPlan(p.id, viewedDayIdx: idx);
+  }
+
+  void _deletePlan(Program p) {
+    final programs = context.read<ProgramsProvider>();
+    final trainState = context.read<TrainStateProvider>();
+    final wasActive = trainState.activePlanId == p.id;
+    programs.removeProgram(p.id);
+    if (!wasActive) return;
+    final remaining = programs.programs;
+    if (remaining.isEmpty) {
+      trainState.clear();
+    } else {
+      _selectPlan(remaining.first);
+    }
   }
 
   void _openExerciseDetail(String programId, int? dayIdx, int startIdx) {
@@ -77,6 +121,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final trainState = context.watch<TrainStateProvider>();
     final colors = Theme.of(context).extension<AppColors>()!;
     final programs = programsProvider.programs;
+    final t = AppLocalizations.of(context)!;
 
     if (programs.isEmpty) {
       return _EmptyState(
@@ -90,9 +135,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
         )),
         onLoadExample: () => Navigator.of(context).push(MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (_) => const ImportLogScreen(
+          builder: (_) => ImportLogScreen(
             initialText: exampleLog,
-            initialName: 'Beispielplan',
+            initialName: t.exampleLogPlanName,
           ),
         )),
       );
@@ -107,10 +152,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final exercises = isRestDay ? const <Exercise>[] : (day?.exercises ?? const <Exercise>[]);
     final dailyExercises = isRestDay ? const <Exercise>[] : plan.dailyExercises;
 
+    final localeName = Localizations.localeOf(context).toString();
+
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, kFloatingNavClearance),
         children: [
+          Text(_greeting(t), style: Theme.of(context).textTheme.headlineLarge),
+          Text(
+            DateFormat.yMMMMEEEEd(localeName).format(DateTime.now()),
+            style: TextStyle(color: colors.mut),
+          ),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -118,33 +171,30 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(plan.name, style: Theme.of(context).textTheme.headlineLarge),
+                    Text(plan.name, style: Theme.of(context).textTheme.headlineMedium),
                     Text(
                       isRestDay
-                          ? '${day?.label ?? ''} · Ruhetag'
-                          : '${day?.label ?? ''} · ${plan.completed} Workouts',
+                          ? t.daySubtitleRest(day?.label ?? '')
+                          : t.daySubtitleWorkouts(day?.label ?? '', plan.completed),
                       style: TextStyle(color: colors.mut),
                     ),
                   ],
                 ),
               ),
               const ThemeToggleButton(),
+              _OverflowMenuButton(t: t),
               IconButton(
                 icon: const Icon(Icons.list_alt),
-                tooltip: 'Alle Pläne',
+                tooltip: t.actionAllPlans,
                 onPressed: () async {
-                  final chosen =
-                      await showPlanPicker(context, programs: programs, activeId: plan.id);
+                  final chosen = await showPlanPicker(
+                    context,
+                    programs: programs,
+                    activeId: plan.id,
+                    onDelete: _deletePlan,
+                  );
                   if (chosen != null) _selectPlan(chosen);
                 },
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                tooltip: 'Einstellungen',
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  fullscreenDialog: true,
-                  builder: (_) => const SettingsScreen(),
-                )),
               ),
             ],
           ),
@@ -156,12 +206,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
               onSelect: (i) => context.read<TrainStateProvider>().setViewedDayIdx(i),
             ),
           const SizedBox(height: 16),
+          _HomeDashboardStats(exercises: exercises, isRestDay: isRestDay),
+          const SizedBox(height: 16),
           if (isRestDay)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
-                  'Ruhetag — heute keine geplanten Übungen.',
+                  t.emptyRestDay,
                   style: TextStyle(color: colors.mut),
                 ),
               ),
@@ -177,12 +229,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       fullscreenDialog: true,
                       builder: (_) => WorkoutOverlayScreen(programId: plan.id, dayIdx: dayIdx),
                     )),
-                    child: const Text('Workout starten'),
+                    child: Text(t.actionStartWorkout),
                   ),
                 ),
               ),
             if (dailyExercises.isNotEmpty) ...[
-              Text('JEDEN TRAININGSTAG', style: Theme.of(context).textTheme.labelSmall),
+              Text(t.headerEveryTrainingDay, style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 8),
               for (var i = 0; i < dailyExercises.length; i++)
                 ExerciseCard(
@@ -198,7 +250,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
               const SizedBox(height: 16),
             ],
             if (exercises.isNotEmpty) ...[
-              Text('HEUTIGER TAG', style: Theme.of(context).textTheme.labelSmall),
+              Text(t.headerTodaysDay, style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 8),
               for (var i = 0; i < exercises.length; i++)
                 ExerciseCard(
@@ -219,6 +271,165 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 }
 
+/// Quick Stats + This Week + Recent PRs — the "at a glance" section of the
+/// home dashboard, entirely computed from [analytics_engine], never shown
+/// for a rest day's exercise estimate (that part alone respects [isRestDay]).
+class _HomeDashboardStats extends StatelessWidget {
+  const _HomeDashboardStats({required this.exercises, required this.isRestDay});
+
+  final List<Exercise> exercises;
+  final bool isRestDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final sessions = context.watch<WorkoutHistoryProvider>().sessions;
+    final lifts = context.watch<BigLiftsProvider>().lifts;
+
+    final week = computeWeekSummary(sessions);
+    final recentPrs = countRecentLiftPrs(lifts);
+
+    final prEntries = <MapEntry<String, double>>[
+      if (lifts.bench.pr > 0) MapEntry(t.labelBenchPress, lifts.bench.pr),
+      if (lifts.deadlift.pr > 0) MapEntry(t.labelDeadlift, lifts.deadlift.pr),
+      if (lifts.squat.pr > 0) MapEntry(t.labelSquat, lifts.squat.pr),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!isRestDay && exercises.isNotEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t.labelNextWorkout, style: Theme.of(context).textTheme.labelSmall),
+                  const SizedBox(height: 6),
+                  Text(
+                    t.exerciseCountEstimate(exercises.length, _estimateWorkoutMinutes(exercises)),
+                    style: TextStyle(color: colors.mut),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        Text(t.labelQuickStats, style: Theme.of(context).textTheme.labelSmall),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _QuickStatTile(label: t.labelWorkouts, value: '${week.workoutCount}')),
+            const SizedBox(width: 10),
+            Expanded(child: _QuickStatTile(label: t.labelVolume, value: '${fmt(week.totalVolumeKg)} kg')),
+            const SizedBox(width: 10),
+            Expanded(child: _QuickStatTile(label: t.labelPRs, value: '$recentPrs')),
+          ],
+        ),
+        const _HealthCard(),
+        if (prEntries.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(t.labelRecentPrs, style: Theme.of(context).textTheme.labelSmall),
+          const SizedBox(height: 8),
+          for (final entry in prEntries)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.emoji_events_outlined, size: 18, color: colors.yellow),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(entry.key)),
+                  Text('${fmt1(entry.value)} kg', style: const TextStyle(fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Steps-today card, only shown on Android/iOS (see
+/// [HealthProvider.isSupportedPlatform]) — hidden entirely on
+/// desktop/web, where there's no OS health store to connect to.
+class _HealthCard extends StatelessWidget {
+  const _HealthCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final health = context.watch<HealthProvider>();
+    if (!health.isSupportedPlatform) return const SizedBox.shrink();
+
+    final t = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).extension<AppColors>()!;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.favorite_border, size: 18, color: colors.accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.titleHealthSync, style: Theme.of(context).textTheme.headlineMedium),
+                    if (health.isAuthorized)
+                      Text(
+                        '${t.labelStepsToday}: ${health.stepsToday ?? '—'}',
+                        style: TextStyle(color: colors.mut),
+                      ),
+                  ],
+                ),
+              ),
+              if (!health.isAuthorized)
+                OutlinedButton(
+                  onPressed: health.isLoading ? null : () => health.connect(),
+                  child: Text(t.actionConnectHealth),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickStatTile extends StatelessWidget {
+  const _QuickStatTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(color: colors.mut, fontSize: 11.5)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
     required this.onNewPlan,
@@ -232,6 +443,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -239,34 +451,116 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Noch kein Trainingsplan angelegt.',
+              t.emptyNoPlan,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: onNewPlan, child: const Text('+ Neuer Plan')),
+              child: ElevatedButton(onPressed: onNewPlan, child: Text(t.actionNewPlan)),
             ),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: OutlinedButton.icon(
                 onPressed: onImportLog,
-                child: const Text('📄 Log importieren'),
+                icon: const Icon(Icons.description_outlined, size: 18),
+                label: Text(t.actionImportLog),
               ),
             ),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: OutlinedButton.icon(
                 onPressed: onLoadExample,
-                child: const Text('⭐ Beispielplan laden'),
+                icon: const Icon(Icons.star_outline, size: 18),
+                label: Text(t.actionLoadExample),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+enum _OverflowAction { language, backup, calendar, gallery, settings }
+
+/// Groups the less-frequently-used header actions (language, backup) behind
+/// one menu button instead of two more permanent icon buttons — keeps the
+/// header from getting crowded next to the always-visible theme toggle and
+/// "all plans" button. Acting in [onSelected] (fired after the menu has
+/// already closed) rather than a per-item `onTap` avoids the bottom sheet's
+/// route fighting with the popup menu's own closing animation.
+class _OverflowMenuButton extends StatelessWidget {
+  const _OverflowMenuButton({required this.t});
+
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_OverflowAction>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (action) {
+        switch (action) {
+          case _OverflowAction.language:
+            showLanguagePicker(context);
+          case _OverflowAction.backup:
+            showBackupSheet(context);
+          case _OverflowAction.calendar:
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalendarScreen()));
+          case _OverflowAction.gallery:
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GalleryScreen()));
+          case _OverflowAction.settings:
+            Navigator.of(context).push(MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (_) => const SettingsScreen(),
+            ));
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: _OverflowAction.settings,
+          child: ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: Text(t.titleSettings),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _OverflowAction.calendar,
+          child: ListTile(
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: Text(t.titleCalendar),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _OverflowAction.gallery,
+          child: ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: Text(t.titleGallery),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _OverflowAction.language,
+          child: ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(t.settingsLanguage),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _OverflowAction.backup,
+          child: ListTile(
+            leading: const Icon(Icons.import_export),
+            title: Text(t.titleBackup),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
     );
   }
 }

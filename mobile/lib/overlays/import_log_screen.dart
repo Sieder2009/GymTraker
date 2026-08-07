@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/constants.dart';
+import '../l10n/app_localizations.dart';
 import '../models/program.dart';
 import '../services/log_parser.dart';
 import '../state/big_lifts_provider.dart';
@@ -11,10 +12,10 @@ import '../state/train_state_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 
-/// "📄 Log importieren" — paste-in log parsing + preview + save, ported
+/// "Log importieren" — paste-in log parsing + preview + save, ported
 /// from `ImportLog.svelte`. [initialText]/[initialName] pre-fill and
 /// auto-analyze immediately, matching how the original loads the bundled
-/// "⭐ Beispielplan laden" example without any user action. v1 has no file
+/// "Beispielplan laden" example without any user action. v1 has no file
 /// picker (paste-only) — more natural on a phone, and one less dependency.
 class ImportLogScreen extends StatefulWidget {
   const ImportLogScreen({
@@ -55,7 +56,7 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
   void _analyze() {
     final text = _textController.text;
     if (text.trim().isEmpty) {
-      context.read<ToastProvider>().show('Bitte zuerst ein Log einfügen.');
+      context.read<ToastProvider>().show(AppLocalizations.of(context)!.toastLogRequired);
       return;
     }
     setState(() => _parsed = parseLog(text));
@@ -91,58 +92,55 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
           );
     }
 
-    context.read<ToastProvider>().show('Log importiert ✅');
+    context.read<ToastProvider>().show(AppLocalizations.of(context)!.toastLogImported);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final parsed = _parsed;
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Log importieren'),
+        title: Text(t.titleImportLog),
       ),
-      body: SafeArea(child: parsed == null ? _buildInputView() : _buildPreviewView(parsed)),
+      body: SafeArea(child: parsed == null ? _buildInputView(t) : _buildPreviewView(parsed, t)),
     );
   }
 
-  Widget _buildInputView() {
+  Widget _buildInputView(AppLocalizations t) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          'Füge dein handgeschriebenes Trainingslog ein — Tage im Format "1. Wochentag", '
-          'Übungen und Gewichte werden automatisch erkannt.',
-          style: TextStyle(color: colors.mut),
-        ),
+        Text(t.infoImportLogHelp, style: TextStyle(color: colors.mut)),
         const SizedBox(height: 12),
         TextField(
           controller: _textController,
           maxLines: 16,
-          decoration: const InputDecoration(hintText: 'Log hier einfügen …'),
+          decoration: InputDecoration(hintText: t.hintLogPaste),
         ),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(onPressed: _analyze, child: const Text('Analysieren')),
+          child: ElevatedButton(onPressed: _analyze, child: Text(t.actionAnalyze)),
         ),
       ],
     );
   }
 
-  Widget _buildPreviewView(ParsedLog parsed) {
+  Widget _buildPreviewView(ParsedLog parsed, AppLocalizations t) {
     if (parsed.days.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           for (final w in parsed.warnings) _WarningCard(text: w),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: _back, child: const Text('← Zurück')),
+          OutlinedButton(onPressed: _back, child: Text(t.actionBack)),
         ],
       );
     }
@@ -154,7 +152,7 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Name des Plans'),
+          decoration: InputDecoration(labelText: t.labelPlanName),
         ),
         const SizedBox(height: 12),
         for (final w in parsed.warnings) _WarningCard(text: w),
@@ -166,23 +164,23 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Erkannte PRs${parsed.pr.date != null ? ' (${fmtDate(parsed.pr.date!)})' : ''}',
+                    '${t.headerDetectedPrs}${parsed.pr.date != null ? ' (${fmtDate(parsed.pr.date!)})' : ''}',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  if (parsed.pr.bench != null) Text('Bench Press: ${fmt(parsed.pr.bench!)} kg'),
-                  if (parsed.pr.deadlift != null) Text('Deadlift: ${fmt(parsed.pr.deadlift!)} kg'),
-                  if (parsed.pr.squat != null) Text('Squat: ${fmt(parsed.pr.squat!)} kg'),
+                  if (parsed.pr.bench != null) Text('${t.labelBenchPress}: ${fmt(parsed.pr.bench!)} kg'),
+                  if (parsed.pr.deadlift != null) Text('${t.labelDeadlift}: ${fmt(parsed.pr.deadlift!)} kg'),
+                  if (parsed.pr.squat != null) Text('${t.labelSquat}: ${fmt(parsed.pr.squat!)} kg'),
                 ],
               ),
             ),
           ),
         if (parsed.dailyExercises.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('JEDEN TRAININGSTAG', style: Theme.of(context).textTheme.labelSmall),
-          for (final ex in parsed.dailyExercises) _ExercisePreviewTile(exercise: ex),
+          Text(t.headerEveryTrainingDay, style: Theme.of(context).textTheme.labelSmall),
+          for (final ex in parsed.dailyExercises) _ExercisePreviewTile(exercise: ex, t: t),
         ],
         const SizedBox(height: 8),
-        Text('TAGE', style: Theme.of(context).textTheme.labelSmall),
+        Text(t.headerDays, style: Theme.of(context).textTheme.labelSmall),
         for (final day in parsed.days)
           Card(
             child: Padding(
@@ -190,8 +188,8 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tag ${day.num}', style: Theme.of(context).textTheme.headlineMedium),
-                  for (final ex in day.exercises) _ExercisePreviewTile(exercise: ex),
+                  Text(t.dayNumber(day.num), style: Theme.of(context).textTheme.headlineMedium),
+                  for (final ex in day.exercises) _ExercisePreviewTile(exercise: ex, t: t),
                 ],
               ),
             ),
@@ -199,10 +197,10 @@ class _ImportLogScreenState extends State<ImportLogScreen> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: OutlinedButton(onPressed: _back, child: const Text('← Zurück'))),
+            Expanded(child: OutlinedButton(onPressed: _back, child: Text(t.actionBack))),
             const SizedBox(width: 12),
             Expanded(
-              child: ElevatedButton(onPressed: _savePlan, child: const Text('Plan speichern')),
+              child: ElevatedButton(onPressed: _savePlan, child: Text(t.actionSavePlan)),
             ),
           ],
         ),
@@ -232,13 +230,14 @@ class _WarningCard extends StatelessWidget {
 }
 
 class _ExercisePreviewTile extends StatelessWidget {
-  const _ExercisePreviewTile({required this.exercise});
+  const _ExercisePreviewTile({required this.exercise, required this.t});
   final ParsedExercise exercise;
+  final AppLocalizations t;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    final weightLabel = exercise.weight > 0 ? '${fmt1(exercise.weight)} kg' : 'BW';
+    final weightLabel = exercise.weight > 0 ? '${fmt1(exercise.weight)} kg' : t.labelBodyweightAbbr;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

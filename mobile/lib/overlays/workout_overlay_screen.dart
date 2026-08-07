@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/constants.dart';
+import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
+import '../state/health_provider.dart';
 import '../state/programs_provider.dart';
 import '../state/toast_provider.dart';
+import '../state/workout_history_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../widgets/rest_ring.dart';
 
 /// Guided, sequential set-by-set workout session, ported from
@@ -33,8 +37,23 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
   int _restTotal = 0;
   int? _rpe;
   Timer? _timer;
+  final DateTime _startedAt = DateTime.now();
+  double _sessionVolumeKg = 0;
+  int _sessionSets = 0;
 
   ProgramsProvider get _programs => context.read<ProgramsProvider>();
+
+  /// Best-effort numeric rep count from a target-reps string like "8" or a
+  /// range like "8-10" (averaged) — used only to estimate session volume,
+  /// since the guided workout doesn't collect actual reps performed.
+  static double _repsForVolume(String r) {
+    final numbers = RegExp(r'\d+(?:[.,]\d+)?')
+        .allMatches(r)
+        .map((m) => double.parse(m.group(0)!.replaceAll(',', '.')))
+        .toList();
+    if (numbers.isEmpty) return 0;
+    return numbers.reduce((a, b) => a + b) / numbers.length;
+  }
 
   int _totalSets(List<Exercise> exercises) {
     var total = 0;
@@ -59,6 +78,10 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
   void _completeSet(List<Exercise> exercises) {
     _programs.toggleSet(exercises, _exIdx, _setIdx);
 
+    final set = exercises[_exIdx].sets[_setIdx];
+    _sessionVolumeKg += set.w * _repsForVolume(set.r);
+    _sessionSets += 1;
+
     final currentSets = exercises[_exIdx].sets.length;
     final isLastSetOfExercise = _setIdx >= currentSets - 1;
     final isLastExercise = _exIdx >= exercises.length - 1;
@@ -66,7 +89,23 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
     if (isLastSetOfExercise && isLastExercise) {
       final plan = _programs.byId(widget.programId)!;
       _programs.finishWorkout(plan);
-      context.read<ToastProvider>().show('Workout abgeschlossen 💪');
+      final minutes = DateTime.now().difference(_startedAt).inMinutes;
+      context.read<WorkoutHistoryProvider>().logSession(
+            date: todayIso(),
+            durationMinutes: minutes < 1 ? 1 : minutes,
+            planName: plan.name,
+            totalVolumeKg: _sessionVolumeKg,
+            totalSets: _sessionSets,
+          );
+      // Best-effort, never blocks finishing the workout — Health Connect/
+      // HealthKit access can fail for reasons entirely outside the app's
+      // control (not connected, permission revoked, ...).
+      unawaited(context.read<HealthProvider>().writeWorkout(
+            start: _startedAt,
+            end: DateTime.now(),
+            title: plan.name,
+          ));
+      context.read<ToastProvider>().show(AppLocalizations.of(context)!.toastWorkoutFinished);
       Navigator.of(context).pop();
       return;
     }
@@ -117,15 +156,16 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
       return const SizedBox.shrink();
     }
 
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
-        child: _resting ? _buildRestView(colors) : _buildMainView(exercises, colors),
+        child: _resting ? _buildRestView(colors, t) : _buildMainView(exercises, colors, t),
       ),
     );
   }
 
-  Widget _buildMainView(List<Exercise> exercises, AppColors colors) {
+  Widget _buildMainView(List<Exercise> exercises, AppColors colors, AppLocalizations t) {
     final ex = exercises[_exIdx];
     final sets = ex.sets;
     final weight = sets[_setIdx].w;
@@ -143,7 +183,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppRadii.xs),
                   child: LinearProgressIndicator(
                     value: progress.clamp(0, 1).toDouble(),
                     backgroundColor: colors.card2,
@@ -161,7 +201,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
             textAlign: TextAlign.center,
           ),
           Text(
-            'Übung ${_exIdx + 1}/${exercises.length} · Satz ${_setIdx + 1}/${sets.length}',
+            t.exerciseSetProgress(_exIdx + 1, exercises.length, _setIdx + 1, sets.length),
             style: TextStyle(color: colors.mut),
             textAlign: TextAlign.center,
           ),
@@ -177,7 +217,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  weight > 0 ? '${fmt1(weight)} kg' : 'BW',
+                  weight > 0 ? '${fmt1(weight)} kg' : t.labelBodyweightAbbr,
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
               ),
@@ -189,7 +229,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
             ],
           ),
           Center(
-            child: Text('Ziel: $targetReps Wdh.', style: TextStyle(color: colors.mut)),
+            child: Text(t.targetReps(targetReps), style: TextStyle(color: colors.mut)),
           ),
           const SizedBox(height: 16),
           Row(
@@ -209,7 +249,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Text('RPE', style: TextStyle(color: colors.mut), textAlign: TextAlign.center),
+          Text(t.headerRpe, style: TextStyle(color: colors.mut), textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.center,
@@ -226,14 +266,14 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
           const Spacer(),
           ElevatedButton(
             onPressed: () => _completeSet(exercises),
-            child: Text(isLast ? 'Workout beenden' : 'Satz abschließen'),
+            child: Text(isLast ? t.actionFinishWorkout : t.actionCompleteSet),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRestView(AppColors colors) {
+  Widget _buildRestView(AppColors colors, AppLocalizations t) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -246,14 +286,14 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen> {
             child: Text('$_restLeft', style: Theme.of(context).textTheme.headlineLarge),
           ),
           const SizedBox(height: 16),
-          Text('Sekunden Pause', style: TextStyle(color: colors.mut)),
+          Text(t.secondsPause, style: TextStyle(color: colors.mut)),
           const SizedBox(height: 24),
           TextButton(
             onPressed: () {
               final plan = context.read<ProgramsProvider>().byId(widget.programId)!;
               _advance(plan.days[widget.dayIdx].exercises);
             },
-            child: const Text('Überspringen →'),
+            child: Text(t.actionSkipRest),
           ),
         ],
       ),

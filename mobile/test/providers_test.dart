@@ -1,21 +1,47 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:ironpeak_mobile/models/exercise.dart';
 import 'package:ironpeak_mobile/models/exercise_set.dart';
 import 'package:ironpeak_mobile/models/program.dart';
 import 'package:ironpeak_mobile/services/storage_service.dart';
 import 'package:ironpeak_mobile/state/big_lifts_provider.dart';
+import 'package:ironpeak_mobile/state/body_weight_provider.dart';
 import 'package:ironpeak_mobile/state/programs_provider.dart';
 import 'package:ironpeak_mobile/state/toast_provider.dart';
 import 'package:ironpeak_mobile/state/train_state_provider.dart';
+import 'package:ironpeak_mobile/state/workout_history_provider.dart';
+
+/// Opens a fresh on-disk sqflite (FFI) database, one per call — separate
+/// physical files rather than `:memory:` so two `StorageService`s can open
+/// the SAME backing db and see each other's writes, matching how the real
+/// app persists across restarts (see the reload test below). Deletes any
+/// leftover file from a previous test run first — the filenames are
+/// deterministic (call order), so without this, a later run silently
+/// reopens a prior run's file and inherits its data.
+int _dbCounter = 0;
+
+Future<Database> _freshDb() async {
+  final path = 'test_ironpeak_${_dbCounter++}.db';
+  await databaseFactoryFfi.deleteDatabase(path);
+  return databaseFactoryFfi.openDatabase(
+    path,
+    options: OpenDatabaseOptions(
+      version: 1,
+      onCreate: (db, _) => db.execute(
+        'CREATE TABLE kv(key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+      ),
+    ),
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
 
   Future<StorageService> freshStorage() async {
-    SharedPreferences.setMockInitialValues({});
-    return StorageService.create();
+    return StorageService.create(database: await _freshDb());
   }
 
   group('ProgramsProvider', () {
@@ -64,9 +90,20 @@ void main() {
       expect(ex.sets[0].w, 70);
     });
 
-    test('addProgram + persistence survives a reload from the same prefs backing', () async {
-      SharedPreferences.setMockInitialValues({});
-      final storageA = await StorageService.create();
+    test('addProgram + persistence survives a reload from the same db file', () async {
+      const dbPath = 'test_ironpeak_reload.db';
+      Future<Database> reopen() => databaseFactoryFfi.openDatabase(
+            dbPath,
+            options: OpenDatabaseOptions(
+              version: 1,
+              onCreate: (db, _) => db.execute(
+                'CREATE TABLE kv(key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+              ),
+            ),
+          );
+      await databaseFactoryFfi.deleteDatabase(dbPath);
+
+      final storageA = await StorageService.create(database: await reopen());
       final providerA = ProgramsProvider(storageA);
       providerA.addProgram(Program(
         id: 'plan_1',
@@ -80,9 +117,25 @@ void main() {
       // pending write a chance to land before reading it back.
       await Future<void>.delayed(Duration.zero);
 
-      final storageB = await StorageService.create();
+      final storageB = await StorageService.create(database: await reopen());
       final providerB = ProgramsProvider(storageB);
       expect(providerB.programs.single.id, 'plan_1');
+    });
+
+    test('removeProgram deletes only the matching id', () async {
+      final storage = await freshStorage();
+      final provider = ProgramsProvider(storage);
+      provider.addProgram(Program(
+        id: 'plan_1', name: 'A', mode: 'weekday', startDate: '2026-01-01', days: [],
+      ));
+      provider.addProgram(Program(
+        id: 'plan_2', name: 'B', mode: 'weekday', startDate: '2026-01-01', days: [],
+      ));
+
+      provider.removeProgram('plan_1');
+
+      expect(provider.programs.length, 1);
+      expect(provider.programs.single.id, 'plan_2');
     });
   });
 
@@ -93,6 +146,44 @@ void main() {
       provider.selectPlan('plan_1', viewedDayIdx: 3);
       expect(provider.activePlanId, 'plan_1');
       expect(provider.viewedDayIdx, 3);
+    });
+
+    test('clear() resets to no active plan', () async {
+      final storage = await freshStorage();
+      final provider = TrainStateProvider(storage);
+      provider.selectPlan('plan_1', viewedDayIdx: 2);
+      provider.clear();
+      expect(provider.activePlanId, isNull);
+      expect(provider.viewedDayIdx, 0);
+    });
+  });
+
+  group('BodyWeightProvider', () {
+    test('addEntry ignores zero/negative weight', () async {
+      final storage = await freshStorage();
+      final provider = BodyWeightProvider(storage);
+      provider.addEntry(0);
+      provider.addEntry(-5);
+      expect(provider.entries, isEmpty);
+    });
+
+    test('addEntry appends a dated entry', () async {
+      final storage = await freshStorage();
+      final provider = BodyWeightProvider(storage);
+      provider.addEntry(82.5);
+      expect(provider.entries.single.weight, 82.5);
+      expect(provider.entries.single.date, isNotEmpty);
+    });
+  });
+
+  group('WorkoutHistoryProvider', () {
+    test('logSession appends a session with the given date/duration/plan', () async {
+      final storage = await freshStorage();
+      final provider = WorkoutHistoryProvider(storage);
+      provider.logSession(date: '2026-08-07', durationMinutes: 45, planName: 'Push Pull Legs');
+      expect(provider.sessions.single.date, '2026-08-07');
+      expect(provider.sessions.single.durationMinutes, 45);
+      expect(provider.sessions.single.planName, 'Push Pull Legs');
     });
   });
 
@@ -118,9 +209,9 @@ void main() {
   group('ToastProvider', () {
     test('show() sets message + visible synchronously', () async {
       final provider = ToastProvider();
-      provider.show('Gespeichert ✅');
+      provider.show('Gespeichert');
       expect(provider.visible, isTrue);
-      expect(provider.message, 'Gespeichert ✅');
+      expect(provider.message, 'Gespeichert');
       provider.dispose();
     });
   });

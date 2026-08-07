@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/constants.dart';
+import '../l10n/app_localizations.dart';
 import '../models/day.dart';
 import '../models/exercise.dart';
 import '../models/exercise_set.dart';
@@ -9,6 +10,9 @@ import '../models/program.dart';
 import '../state/programs_provider.dart';
 import '../state/toast_provider.dart';
 import '../state/train_state_provider.dart';
+import '../theme/app_colors.dart';
+import '../widgets/exercise_picker_sheet.dart';
+import '../widgets/muscle_activation_editor.dart';
 
 class _DraftExercise {
   _DraftExercise()
@@ -21,6 +25,11 @@ class _DraftExercise {
   final TextEditingController sets;
   final TextEditingController reps;
   final TextEditingController weight;
+
+  /// Set via [MuscleActivationEditor] — a detailed per-muscle breakdown for
+  /// user-authored exercises, on top of the broad category the shared
+  /// exercise database already provides for picked-from-list exercises.
+  Map<String, double> muscleActivation = {};
 
   void dispose() {
     name.dispose();
@@ -109,9 +118,10 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
   }
 
   void _save() {
+    final t = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      context.read<ToastProvider>().show('Bitte einen Namen vergeben ✏️');
+      context.read<ToastProvider>().show(t.toastNameRequired);
       return;
     }
 
@@ -129,6 +139,7 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
                 '',
                 90,
                 List.generate(setCount, (_) => ExerciseSet(w: w, r: r)),
+                muscleActivation: e.muscleActivation,
               );
             }).toList();
       final label = d.labelController.text.trim().isEmpty ? d.label : d.labelController.text.trim();
@@ -146,7 +157,7 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
     context.read<ProgramsProvider>().addProgram(program);
     final idx = todayIndexForProgram(mode: program.mode, currentDayIdx: program.currentDayIdx);
     context.read<TrainStateProvider>().selectPlan(program.id, viewedDayIdx: idx);
-    context.read<ToastProvider>().show('Trainingsplan gespeichert ✅');
+    context.read<ToastProvider>().show(t.toastPlanSaved);
     Navigator.of(context).pop();
   }
 
@@ -161,14 +172,15 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Neuer Plan'),
-        actions: [TextButton(onPressed: _save, child: const Text('Speichern'))],
+        title: Text(t.titleNewPlan),
+        actions: [TextButton(onPressed: _save, child: Text(t.actionSave))],
       ),
       body: SafeArea(
         child: ListView(
@@ -176,23 +188,23 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name des Plans'),
+              decoration: InputDecoration(labelText: t.labelPlanName),
             ),
             const SizedBox(height: 16),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'weekday', label: Text('Wochentag')),
-                ButtonSegment(value: 'rotation', label: Text('Rotation')),
+              segments: [
+                ButtonSegment(value: 'weekday', label: Text(t.modeWeekday)),
+                ButtonSegment(value: 'rotation', label: Text(t.modeRotation)),
               ],
               selected: {_mode},
               onSelectionChanged: (s) => _setMode(s.first),
             ),
             const SizedBox(height: 16),
-            for (var i = 0; i < _days.length; i++) _buildDayCard(i),
+            for (var i = 0; i < _days.length; i++) _buildDayCard(i, t),
             if (_mode == 'rotation')
               OutlinedButton(
                 onPressed: _addRotationDay,
-                child: const Text('+ Tag/Routine hinzufügen'),
+                child: Text(t.actionAddDayOrRoutine),
               ),
           ],
         ),
@@ -200,7 +212,7 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
     );
   }
 
-  Widget _buildDayCard(int i) {
+  Widget _buildDayCard(int i, AppLocalizations t) {
     final day = _days[i];
     final hidden = _mode == 'weekday' && day.rest;
     return Card(
@@ -215,12 +227,15 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
                   child: _mode == 'rotation'
                       ? TextField(
                           controller: day.labelController,
-                          decoration: const InputDecoration(labelText: 'Bezeichnung'),
+                          decoration: InputDecoration(labelText: t.labelDesignation),
                         )
+                      // Weekday labels (Montag..Sonntag) stay in the log
+                      // format's German, independent of the UI language —
+                      // see the class doc on kWeekdays in data/constants.dart.
                       : Text(day.label, style: Theme.of(context).textTheme.headlineMedium),
                 ),
                 if (_mode == 'weekday') ...[
-                  const Text('Ruhetag'),
+                  Text(t.labelRestDay),
                   Checkbox(
                     value: day.rest,
                     onChanged: (v) => setState(() => day.rest = v ?? false),
@@ -234,10 +249,10 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
               ],
             ),
             if (!hidden) ...[
-              for (var j = 0; j < day.exercises.length; j++) _buildExerciseRow(i, j),
+              for (var j = 0; j < day.exercises.length; j++) _buildExerciseRow(i, j, t),
               TextButton(
                 onPressed: () => _addExercise(i),
-                child: const Text('+ Übung hinzufügen'),
+                child: Text(t.actionAddExercise),
               ),
             ],
           ],
@@ -246,45 +261,77 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
     );
   }
 
-  Widget _buildExerciseRow(int dayIdx, int exIdx) {
+  Future<void> _pickExercise(_DraftExercise ex) async {
+    final picked = await showExercisePicker(context);
+    if (picked != null) ex.name.text = picked.name;
+  }
+
+  Future<void> _configureMuscles(_DraftExercise ex) async {
+    final result = await showMuscleActivationEditor(context, initial: ex.muscleActivation);
+    if (result != null) setState(() => ex.muscleActivation = result);
+  }
+
+  Widget _buildExerciseRow(int dayIdx, int exIdx, AppLocalizations t) {
     final ex = _days[dayIdx].exercises[exIdx];
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final hasMuscles = ex.muscleActivation.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 3,
-            child: TextField(
-              controller: ex.name,
-              decoration: const InputDecoration(hintText: 'Übung'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: ex.name,
+                  decoration: InputDecoration(
+                    hintText: t.hintExercise,
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search, size: 18),
+                      tooltip: t.actionPickFromList,
+                      onPressed: () => _pickExercise(ex),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: TextField(
+                  controller: ex.sets,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(hintText: t.hintSets),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: TextField(
+                  controller: ex.reps,
+                  decoration: InputDecoration(hintText: t.hintReps),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: TextField(
+                  controller: ex.weight,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(hintText: t.hintWeightKg),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => _removeExercise(dayIdx, exIdx),
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: TextField(
-              controller: ex.sets,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(hintText: 'Sätze'),
+          TextButton.icon(
+            onPressed: () => _configureMuscles(ex),
+            icon: Icon(Icons.accessibility_new, size: 16, color: hasMuscles ? colors.accent : colors.mut),
+            label: Text(
+              hasMuscles ? t.titleMuscleEditor : t.actionConfigureMuscles,
+              style: TextStyle(color: hasMuscles ? colors.accent : colors.mut, fontSize: 12.5),
             ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: TextField(
-              controller: ex.reps,
-              decoration: const InputDecoration(hintText: 'Wdh.'),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: TextField(
-              controller: ex.weight,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: 'kg'),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            onPressed: () => _removeExercise(dayIdx, exIdx),
           ),
         ],
       ),

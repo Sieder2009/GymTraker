@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/constants.dart';
 import '../models/exercise.dart';
 import '../models/history_entry.dart';
 import '../models/program.dart';
@@ -51,6 +52,12 @@ class ProgramsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeProgram(String id) {
+    _programs.removeWhere((p) => p.id == id);
+    _persist();
+    notifyListeners();
+  }
+
   void adjustWeight(
     List<Exercise> exercises,
     int exIdx,
@@ -85,7 +92,7 @@ class ProgramsProvider extends ChangeNotifier {
     List<Object> reps,
   ) {
     final ex = exercises[exIdx];
-    ex.history.add(HistoryEntry(weight: weight, reps: reps));
+    ex.history.add(HistoryEntry(weight: weight, reps: reps, date: todayIso()));
     for (final s in ex.sets) {
       s.w = weight;
     }

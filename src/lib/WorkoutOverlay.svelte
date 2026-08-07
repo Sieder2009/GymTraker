@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { fmt1 } from './data.js';
+  import Icon from './Icon.svelte';
 
   export let exercises = [];
   export let onAdjust;
@@ -68,9 +69,9 @@
 
 <div class="overlay open">
   <div class="ov-top">
-    <button class="iconbtn" on:click={() => dispatch('close')}>✕</button>
+    <button class="iconbtn" on:click={() => dispatch('close')}><Icon name="close" /></button>
     <div class="ov-progress"><i style="width:{progressPct}%"></i></div>
-    <button class="iconbtn" on:click={() => dispatch('close')}>⏸</button>
+    <button class="iconbtn" on:click={() => dispatch('close')}><Icon name="pause" /></button>
   </div>
 
   {#if ex}
