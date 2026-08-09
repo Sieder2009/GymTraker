@@ -82,6 +82,52 @@ class ProgramsProvider extends ChangeNotifier {
     }
   }
 
+  /// Clears every exercise's "done" marks for a fresh guided-workout
+  /// session — [Exercise.done] is otherwise one-way (never un-marked once
+  /// set), which is fine for a single pass through a plan but would leave
+  /// every set showing as already-done on the *next* time a repeating
+  /// weekday plan comes back around, without this being called first.
+  void resetSessionProgress(List<Exercise> exercises) {
+    for (final ex in exercises) {
+      ex.done.clear();
+    }
+    _persist();
+    notifyListeners();
+  }
+
+  void setActualReps(
+      List<Exercise> exercises, int exIdx, int setIdx, int reps) {
+    exercises[exIdx].sets[setIdx].actualReps = reps < 0 ? 0 : reps;
+    _persist();
+    notifyListeners();
+  }
+
+  void setRpe(List<Exercise> exercises, int exIdx, int setIdx, int? rpe) {
+    exercises[exIdx].sets[setIdx].rpe = rpe;
+    _persist();
+    notifyListeners();
+  }
+
+  /// Appends one [HistoryEntry] summarizing an exercise's just-finished
+  /// guided-workout performance -- weight is the highest logged set weight
+  /// (not a single overwrite like [saveExerciseLog], since a guided
+  /// session's per-set weights are already live-adjusted, correct values,
+  /// e.g. an intentional pyramid/dropset). This is what lets the guided
+  /// workout feed the same PR/trend machinery ([Exercise.history]) that
+  /// previously only [ExerciseDetailScreen]'s manual flow ever wrote to.
+  void appendGuidedHistoryEntry(List<Exercise> exercises, int exIdx) {
+    final ex = exercises[exIdx];
+    var maxWeight = 0.0;
+    for (final s in ex.sets) {
+      if (s.w > maxWeight) maxWeight = s.w;
+    }
+    final reps = [for (final s in ex.sets) s.actualReps ?? 0];
+    ex.history
+        .add(HistoryEntry(weight: maxWeight, reps: reps, date: todayIso()));
+    _persist();
+    notifyListeners();
+  }
+
   /// Pushes a new history entry AND overwrites every current set's weight
   /// to [weight] — matches the original's `saveExerciseLog` exactly (it
   /// always overwrites, unlike [importExerciseHistory] below).

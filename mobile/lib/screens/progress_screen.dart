@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../analytics/achievements_engine.dart';
 import '../analytics/analytics_engine.dart';
 import '../data/constants.dart';
+import '../data/lift_categories.dart';
 import '../l10n/app_localizations.dart';
 import '../models/big_lift.dart';
 import '../state/big_lifts_provider.dart';
@@ -17,35 +19,12 @@ import '../widgets/chart_card.dart';
 import '../widgets/plateau_notice.dart';
 import '../widgets/trend_value.dart';
 
-// Anchored at `^` so grip/stance variants like "Bankdrücken (eng)" match
-// while accessory lifts merely containing the word (e.g. "Hack Squat") do
-// not — ported 1:1 from Progress.svelte's BIG_THREE / LIFT_CATEGORIES.
-final RegExp _bigThree = RegExp(
-  r'^(bench\s*press|bankdrücken|deadlift|kreuzheben|squats?)\b',
-  caseSensitive: false,
-);
-
-class _LiftCategory {
-  const _LiftCategory(this.key, this.pattern);
-  final String key; // matches BigLifts.byKey()
-  final RegExp pattern;
-}
-
-final List<_LiftCategory> _liftCategories = [
-  _LiftCategory('deadlift', RegExp(r'^(deadlift|kreuzheben)\b', caseSensitive: false)),
-  _LiftCategory('bench', RegExp(r'^(bench\s*press|bankdrücken)\b', caseSensitive: false)),
-  _LiftCategory('squat', RegExp(r'^squats?\b', caseSensitive: false)),
-];
-
-_LiftCategory? _categoryForName(String name) {
-  for (final cat in _liftCategories) {
-    if (cat.pattern.hasMatch(name)) return cat;
-  }
-  return null;
-}
-
 class _ProgressRow {
-  _ProgressRow({required this.name, required this.start, required this.now, required this.delta});
+  _ProgressRow(
+      {required this.name,
+      required this.start,
+      required this.now,
+      required this.delta});
   final String name;
   final double start;
   final double now;
@@ -77,13 +56,14 @@ class ProgressScreen extends StatelessWidget {
 
     return SafeArea(
       child: DefaultTabController(
-        length: 4,
+        length: 5,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Text(t.tabProgress, style: Theme.of(context).textTheme.headlineLarge),
+              child: Text(t.tabProgress,
+                  style: Theme.of(context).textTheme.headlineLarge),
             ),
             TabBar(
               isScrollable: true,
@@ -91,13 +71,16 @@ class ProgressScreen extends StatelessWidget {
               labelColor: colors.accent,
               unselectedLabelColor: colors.mut,
               indicatorColor: colors.accent,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              labelStyle:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              unselectedLabelStyle:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               tabs: [
                 Tab(text: t.tabAnalyticsOverview),
                 Tab(text: t.tabAnalyticsStrength),
                 Tab(text: t.tabAnalyticsVolume),
                 Tab(text: t.tabAnalyticsConsistency),
+                Tab(text: t.tabAnalyticsAchievements),
               ],
             ),
             Expanded(
@@ -107,6 +90,7 @@ class ProgressScreen extends StatelessWidget {
                   _StrengthTab(),
                   const _VolumeTab(),
                   const _ConsistencyTab(),
+                  const _AchievementsTab(),
                 ],
               ),
             ),
@@ -161,7 +145,8 @@ class _StrengthTab extends StatelessWidget {
     String liftLabel,
     double currentPr,
   ) async {
-    final controller = TextEditingController(text: currentPr > 0 ? fmt(currentPr) : '');
+    final controller =
+        TextEditingController(text: currentPr > 0 ? fmt(currentPr) : '');
     final result = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -173,7 +158,9 @@ class _StrengthTab extends StatelessWidget {
           decoration: const InputDecoration(suffixText: 'kg'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.actionCancel)),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(t.actionCancel)),
           ElevatedButton(
             onPressed: () {
               final v = double.tryParse(controller.text.replaceAll(',', '.'));
@@ -197,9 +184,14 @@ class _StrengthTab extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColors>()!;
     final t = AppLocalizations.of(context)!;
     final liftKeys = ['deadlift', 'bench', 'squat'];
-    final liftLabelByKey = {'deadlift': t.labelDeadlift, 'bench': t.labelBenchPress, 'squat': t.labelSquat};
+    final liftLabelByKey = {
+      'deadlift': t.labelDeadlift,
+      'bench': t.labelBenchPress,
+      'squat': t.labelSquat
+    };
 
-    final plan = programsProvider.byId(trainState.activePlanId) ?? programsProvider.programs.first;
+    final plan = programsProvider.byId(trainState.activePlanId) ??
+        programsProvider.programs.first;
     final allEx = [
       ...plan.dailyExercises,
       for (final d in plan.days) ...d.exercises,
@@ -207,14 +199,15 @@ class _StrengthTab extends StatelessWidget {
 
     final rows = <_ProgressRow>[];
     for (final ex in allEx) {
-      if (!_bigThree.hasMatch(ex.name)) continue;
+      if (!bigThreePattern.hasMatch(ex.name)) continue;
       var now = 0.0;
       for (final s in ex.sets) {
         if (s.w > now) now = s.w;
       }
       if (now <= 0) continue;
       final delta = ((now - ex.startW) * 10).round() / 10;
-      rows.add(_ProgressRow(name: ex.name, start: ex.startW, now: now, delta: delta));
+      rows.add(_ProgressRow(
+          name: ex.name, start: ex.startW, now: now, delta: delta));
     }
 
     return ListView(
@@ -229,7 +222,8 @@ class _StrengthTab extends StatelessWidget {
         if (rows.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(t.emptyNoWeightedExercises, style: TextStyle(color: colors.mut)),
+            child: Text(t.emptyNoWeightedExercises,
+                style: TextStyle(color: colors.mut)),
           )
         else
           for (final row in rows)
@@ -237,14 +231,17 @@ class _StrengthTab extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadii.lg),
                 onTap: () {
-                  final cat = _categoryForName(row.name);
+                  final cat = liftCategoryForName(row.name);
                   if (cat == null) return;
-                  _openPrDialog(context, t, cat.key, liftLabelByKey[cat.key]!, lifts.byKey(cat.key).pr);
+                  _openPrDialog(context, t, cat.key, liftLabelByKey[cat.key]!,
+                      lifts.byKey(cat.key).pr);
                 },
                 child: ListTile(
                   title: Text(row.name),
                   subtitle: Text(t.weightRange(fmt1(row.start), fmt1(row.now))),
-                  trailing: row.delta == 0 ? null : _DeltaBadge(delta: row.delta, colors: colors),
+                  trailing: row.delta == 0
+                      ? null
+                      : _DeltaBadge(delta: row.delta, colors: colors),
                 ),
               ),
             ),
@@ -283,7 +280,8 @@ class _LiftTrendCard extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: TrendValue(stat: trend, formatDelta: (d) => '${d.toStringAsFixed(1)}%'),
+          child: TrendValue(
+              stat: trend, formatDelta: (d) => '${d.toStringAsFixed(1)}%'),
         ),
         if (plateaued == true) ...[
           const SizedBox(height: 8),
@@ -307,7 +305,8 @@ class _VolumeTab extends StatelessWidget {
     final week = computeWeekSummary(sessions);
     final buckets = weeklyBuckets(sessions);
     final bars = [
-      for (final b in buckets) BarPoint('${b.weekStart.day}.${b.weekStart.month}', b.totalVolumeKg),
+      for (final b in buckets)
+        BarPoint('${b.weekStart.day}.${b.weekStart.month}', b.totalVolumeKg),
     ];
 
     return ListView(
@@ -359,7 +358,9 @@ class _ConsistencyTab extends StatelessWidget {
     final consistency = computeConsistency(sessions);
     final buckets = weeklyBuckets(sessions);
     final bars = [
-      for (final b in buckets) BarPoint('${b.weekStart.day}.${b.weekStart.month}', b.workoutCount.toDouble()),
+      for (final b in buckets)
+        BarPoint('${b.weekStart.day}.${b.weekStart.month}',
+            b.workoutCount.toDouble()),
     ];
 
     return ListView(
@@ -385,7 +386,11 @@ class _ConsistencyTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        _StatTile(label: t.labelWorkoutsThisMonth, value: '${consistency.workoutsThisMonth}', colors: colors, fullWidth: true),
+        _StatTile(
+            label: t.labelWorkoutsThisMonth,
+            value: '${consistency.workoutsThisMonth}',
+            colors: colors,
+            fullWidth: true),
         const SizedBox(height: 16),
         BarChartCard(
           title: t.chartTitleWorkoutsPerWeek,
@@ -399,8 +404,196 @@ class _ConsistencyTab extends StatelessWidget {
   }
 }
 
+/// Achievement paths — every tier derived live from [WorkoutHistoryProvider]/
+/// [ProgramsProvider] (see `achievements_engine.dart`), never a separately
+/// stored "is this unlocked" flag, matching the rest of this tab's honest,
+/// nothing-is-guessed philosophy.
+class _AchievementsTab extends StatelessWidget {
+  const _AchievementsTab();
+
+  String _pathLabel(AppLocalizations t, AchievementPathId id) {
+    switch (id) {
+      case AchievementPathId.consistency:
+        return t.achievementPathConsistency;
+      case AchievementPathId.totalWorkouts:
+        return t.achievementPathTotalWorkouts;
+      case AchievementPathId.totalVolume:
+        return t.achievementPathTotalVolume;
+      case AchievementPathId.prCount:
+        return t.achievementPathPrCount;
+    }
+  }
+
+  IconData _pathIcon(AchievementPathId id) {
+    switch (id) {
+      case AchievementPathId.consistency:
+        return Icons.local_fire_department;
+      case AchievementPathId.totalWorkouts:
+        return Icons.fitness_center;
+      case AchievementPathId.totalVolume:
+        return Icons.scale;
+      case AchievementPathId.prCount:
+        return Icons.emoji_events;
+    }
+  }
+
+  String _formatValue(AppLocalizations t, AchievementPathId id, double value) {
+    switch (id) {
+      case AchievementPathId.consistency:
+        return t.unitDays(value.round());
+      case AchievementPathId.totalVolume:
+        return '${fmt(value)} kg';
+      case AchievementPathId.totalWorkouts:
+      case AchievementPathId.prCount:
+        return '${value.round()}';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final sessions = context.watch<WorkoutHistoryProvider>().sessions;
+    final programs = context.watch<ProgramsProvider>().programs;
+    final paths = computeAchievements(sessions: sessions, programs: programs);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, kFloatingNavClearance),
+      children: [
+        for (final path in paths) ...[
+          _AchievementPathCard(
+            label: _pathLabel(t, path.id),
+            icon: _pathIcon(path.id),
+            path: path,
+            valueLabel: _formatValue(t, path.id, path.currentValue),
+            nextLabel: path.hasNextTier
+                ? t.achievementProgressToNext(_formatValue(
+                    t, path.id, path.nextThreshold! - path.currentValue))
+                : t.achievementAllTiersUnlocked,
+            colors: colors,
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _AchievementPathCard extends StatelessWidget {
+  const _AchievementPathCard({
+    required this.label,
+    required this.icon,
+    required this.path,
+    required this.valueLabel,
+    required this.nextLabel,
+    required this.colors,
+  });
+
+  final String label;
+  final IconData icon;
+  final AchievementPathResult path;
+  final String valueLabel;
+  final String nextLabel;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 20, color: colors.accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(label,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                ),
+                Text(valueLabel,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: colors.accent)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (var i = 0; i < path.thresholds.length; i++)
+                  _TierBadge(
+                    unlocked: i <= path.unlockedTierIndex,
+                    label: '${path.thresholds[i].round()}',
+                    colors: colors,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadii.xs),
+              child: LinearProgressIndicator(
+                value: path.progressToNext,
+                backgroundColor: colors.card2,
+                color: colors.yellow,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(nextLabel, style: TextStyle(color: colors.mut, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TierBadge extends StatelessWidget {
+  const _TierBadge(
+      {required this.unlocked, required this.label, required this.colors});
+
+  final bool unlocked;
+  final String label;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: unlocked
+            ? colors.yellow.withValues(alpha: 0.16)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: unlocked ? colors.yellow : colors.line),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            unlocked ? Icons.emoji_events : Icons.emoji_events_outlined,
+            size: 13,
+            color: unlocked ? colors.yellow : colors.mut,
+          ),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: unlocked ? FontWeight.w700 : FontWeight.w600,
+                color: unlocked ? colors.yellow : colors.mut,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value, required this.colors, this.fullWidth = false});
+  const _StatTile(
+      {required this.label,
+      required this.value,
+      required this.colors,
+      this.fullWidth = false});
 
   final String label;
   final String value;
@@ -413,11 +606,20 @@ class _StatTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: fullWidth ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          crossAxisAlignment:
+              fullWidth ? CrossAxisAlignment.start : CrossAxisAlignment.center,
           children: [
-            Text(label, style: TextStyle(color: colors.mut, fontSize: 11, fontWeight: FontWeight.w700)),
+            Text(label,
+                style: TextStyle(
+                    color: colors.mut,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, color: colors.txt)),
+            Text(value,
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    color: colors.txt)),
           ],
         ),
       ),
@@ -441,7 +643,11 @@ class _YourProgressCard extends StatelessWidget {
     final consistency = computeConsistency(sessions);
     final strengthTrend = bestLiftImprovement(
       lifts,
-      labels: {'bench': t.labelBenchPress, 'deadlift': t.labelDeadlift, 'squat': t.labelSquat},
+      labels: {
+        'bench': t.labelBenchPress,
+        'deadlift': t.labelDeadlift,
+        'squat': t.labelSquat
+      },
     );
     final recentPrs = countRecentLiftPrs(lifts);
     final bodyWeightTrend = computeBodyWeightTrend(bodyWeight);
@@ -458,7 +664,8 @@ class _YourProgressCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t.titleYourProgress, style: Theme.of(context).textTheme.labelSmall),
+            Text(t.titleYourProgress,
+                style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 4),
             Text(message, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 16),
@@ -466,10 +673,14 @@ class _YourProgressCard extends StatelessWidget {
               label: t.labelStrength,
               child: strengthTrend != null
                   ? TrendValue(
-                      stat: TrendStat(delta: strengthTrend.changePercent, quality: DataQuality.good, sampleCount: 2),
+                      stat: TrendStat(
+                          delta: strengthTrend.changePercent,
+                          quality: DataQuality.good,
+                          sampleCount: 2),
                       formatDelta: (d) => '${d.toStringAsFixed(1)}%',
                     )
-                  : Text(t.insufficientDataShort, style: TextStyle(color: colors.mut, fontSize: 12.5)),
+                  : Text(t.insufficientDataShort,
+                      style: TextStyle(color: colors.mut, fontSize: 12.5)),
             ),
             _ProgressStatRow(
               label: t.labelVolume,
@@ -486,12 +697,15 @@ class _YourProgressCard extends StatelessWidget {
               label: t.labelConsistency,
               child: Text(
                 t.unitDays(consistency.currentStreakDays),
-                style: TextStyle(fontWeight: FontWeight.w700, color: colors.txt),
+                style:
+                    TextStyle(fontWeight: FontWeight.w700, color: colors.txt),
               ),
             ),
             _ProgressStatRow(
               label: t.labelPRs,
-              child: Text('$recentPrs', style: TextStyle(fontWeight: FontWeight.w700, color: colors.txt)),
+              child: Text('$recentPrs',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: colors.txt)),
             ),
             _ProgressStatRow(
               label: t.labelBodyweightTitle,
@@ -502,9 +716,14 @@ class _YourProgressCard extends StatelessWidget {
             ),
             if (strengthTrend != null) ...[
               const Divider(height: 24),
-              Text(t.labelBestImprovement, style: TextStyle(color: colors.mut, fontSize: 11, fontWeight: FontWeight.w700)),
+              Text(t.labelBestImprovement,
+                  style: TextStyle(
+                      color: colors.mut,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(strengthTrend.label, style: Theme.of(context).textTheme.headlineMedium),
+              Text(strengthTrend.label,
+                  style: Theme.of(context).textTheme.headlineMedium),
             ],
           ],
         ),
@@ -553,7 +772,8 @@ class _DeltaBadge extends StatelessWidget {
       ),
       child: Text(
         '${positive ? '+' : ''}${fmt1(delta)} kg',
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+        style:
+            TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
       ),
     );
   }

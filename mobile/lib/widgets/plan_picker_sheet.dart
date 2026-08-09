@@ -16,12 +16,20 @@ class PlanPickerSheet extends StatelessWidget {
     required this.activeId,
     required this.onSelect,
     required this.onDelete,
+    this.onNewPlan,
+    this.onLoadPpl,
   });
 
   final List<Program> programs;
   final String? activeId;
   final ValueChanged<Program> onSelect;
   final ValueChanged<Program> onDelete;
+
+  /// Optional -- when set, this sheet doubles as the "add another plan"
+  /// entry point (the only other place that action lived was the
+  /// zero-plans empty state, unreachable once any plan already exists).
+  final VoidCallback? onNewPlan;
+  final VoidCallback? onLoadPpl;
 
   Future<void> _confirmDelete(BuildContext context, Program p) async {
     final t = AppLocalizations.of(context)!;
@@ -31,10 +39,13 @@ class PlanPickerSheet extends StatelessWidget {
         title: Text(t.deletePlanTitle),
         content: Text(t.deletePlanBody(p.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(t.actionCancel)),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(t.actionCancel)),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(t.actionDelete, style: const TextStyle(color: Colors.red)),
+            child:
+                Text(t.actionDelete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -53,14 +64,44 @@ class PlanPickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t.titlePlanPicker, style: Theme.of(context).textTheme.headlineMedium),
+            Text(t.titlePlanPicker,
+                style: Theme.of(context).textTheme.headlineMedium),
+            if (onNewPlan != null || onLoadPpl != null) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (onNewPlan != null)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onNewPlan!();
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(t.actionNewPlan),
+                    ),
+                  if (onLoadPpl != null)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onLoadPpl!();
+                      },
+                      icon: const Icon(Icons.fitness_center, size: 18),
+                      label: Text(t.actionLoadPplExample),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             for (final p in programs)
               Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   title: Text(p.name),
-                  subtitle: Text(p.mode == 'weekday' ? t.planSubtitleWeekday : t.modeRotation),
+                  subtitle: Text(p.mode == 'weekday'
+                      ? t.planSubtitleWeekday
+                      : t.modeRotation),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -94,6 +135,8 @@ Future<Program?> showPlanPicker(
   required String? activeId,
   required ValueChanged<Program> onDelete,
   bool isDismissible = true,
+  VoidCallback? onNewPlan,
+  VoidCallback? onLoadPpl,
 }) {
   return showModalBottomSheet<Program>(
     context: context,
@@ -105,6 +148,8 @@ Future<Program?> showPlanPicker(
       activeId: activeId,
       onSelect: (p) => Navigator.of(ctx).pop(p),
       onDelete: onDelete,
+      onNewPlan: onNewPlan,
+      onLoadPpl: onLoadPpl,
     ),
   );
 }

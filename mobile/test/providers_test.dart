@@ -3,10 +3,12 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:ironpeak_mobile/models/exercise.dart';
 import 'package:ironpeak_mobile/models/exercise_set.dart';
+import 'package:ironpeak_mobile/models/muscle_group.dart';
 import 'package:ironpeak_mobile/models/program.dart';
 import 'package:ironpeak_mobile/services/storage_service.dart';
 import 'package:ironpeak_mobile/state/big_lifts_provider.dart';
 import 'package:ironpeak_mobile/state/body_weight_provider.dart';
+import 'package:ironpeak_mobile/state/custom_exercises_provider.dart';
 import 'package:ironpeak_mobile/state/programs_provider.dart';
 import 'package:ironpeak_mobile/state/toast_provider.dart';
 import 'package:ironpeak_mobile/state/train_state_provider.dart';
@@ -73,15 +75,18 @@ void main() {
       final ex = Exercise.fresh('Bankdrücken', '', 90,
           [ExerciseSet(w: 60, r: '8'), ExerciseSet(w: 60, r: '8')]);
 
-      provider.saveExerciseLog([ex], 0, 50, [8, 7]); // lower weight still overwrites
+      provider.saveExerciseLog(
+          [ex], 0, 50, [8, 7]); // lower weight still overwrites
       expect(ex.sets.every((s) => s.w == 50), isTrue);
       expect(ex.history.single.weight, 50);
     });
 
-    test('importExerciseHistory only overwrites weight if the import is higher', () async {
+    test('importExerciseHistory only overwrites weight if the import is higher',
+        () async {
       final storage = await freshStorage();
       final provider = ProgramsProvider(storage);
-      final ex = Exercise.fresh('Bankdrücken', '', 90, [ExerciseSet(w: 60, r: '8')]);
+      final ex =
+          Exercise.fresh('Bankdrücken', '', 90, [ExerciseSet(w: 60, r: '8')]);
 
       provider.importExerciseHistory([ex], 0, 50, []); // lower -> no overwrite
       expect(ex.sets[0].w, 60);
@@ -90,7 +95,8 @@ void main() {
       expect(ex.sets[0].w, 70);
     });
 
-    test('addProgram + persistence survives a reload from the same db file', () async {
+    test('addProgram + persistence survives a reload from the same db file',
+        () async {
       const dbPath = 'test_ironpeak_reload.db';
       Future<Database> reopen() => databaseFactoryFfi.openDatabase(
             dbPath,
@@ -122,14 +128,73 @@ void main() {
       expect(providerB.programs.single.id, 'plan_1');
     });
 
+    test('resetSessionProgress clears done marks for a fresh session',
+        () async {
+      final storage = await freshStorage();
+      final provider = ProgramsProvider(storage);
+      final ex = Exercise.fresh('Squat', '', 90, [ExerciseSet(w: 100, r: '5')]);
+      provider.toggleSet([ex], 0, 0);
+      expect(ex.done, [0]);
+
+      provider.resetSessionProgress([ex]);
+      expect(ex.done, isEmpty);
+    });
+
+    test('setActualReps clamps negative input to 0', () async {
+      final storage = await freshStorage();
+      final provider = ProgramsProvider(storage);
+      final ex = Exercise.fresh('Squat', '', 90, [ExerciseSet(w: 100, r: '5')]);
+
+      provider.setActualReps([ex], 0, 0, -3);
+      expect(ex.sets[0].actualReps, 0);
+
+      provider.setActualReps([ex], 0, 0, 5);
+      expect(ex.sets[0].actualReps, 5);
+    });
+
+    test('setRpe writes the given value, including null to clear it', () async {
+      final storage = await freshStorage();
+      final provider = ProgramsProvider(storage);
+      final ex = Exercise.fresh('Squat', '', 90, [ExerciseSet(w: 100, r: '5')]);
+
+      provider.setRpe([ex], 0, 0, 8);
+      expect(ex.sets[0].rpe, 8);
+
+      provider.setRpe([ex], 0, 0, null);
+      expect(ex.sets[0].rpe, isNull);
+    });
+
+    test('appendGuidedHistoryEntry uses the highest set weight and logged reps',
+        () async {
+      final storage = await freshStorage();
+      final provider = ProgramsProvider(storage);
+      final ex = Exercise.fresh('Bankdrücken', '', 90, [
+        ExerciseSet(w: 60, r: '8', actualReps: 8),
+        ExerciseSet(w: 65, r: '8', actualReps: 6),
+      ]);
+
+      provider.appendGuidedHistoryEntry([ex], 0);
+
+      expect(ex.history.single.weight, 65);
+      expect(ex.history.single.reps, [8, 6]);
+    });
+
     test('removeProgram deletes only the matching id', () async {
       final storage = await freshStorage();
       final provider = ProgramsProvider(storage);
       provider.addProgram(Program(
-        id: 'plan_1', name: 'A', mode: 'weekday', startDate: '2026-01-01', days: [],
+        id: 'plan_1',
+        name: 'A',
+        mode: 'weekday',
+        startDate: '2026-01-01',
+        days: [],
       ));
       provider.addProgram(Program(
-        id: 'plan_2', name: 'B', mode: 'weekday', startDate: '2026-01-01', days: [],
+        id: 'plan_2',
+        name: 'B',
+        mode: 'weekday',
+        startDate: '2026-01-01',
+        days: [],
       ));
 
       provider.removeProgram('plan_1');
@@ -177,10 +242,12 @@ void main() {
   });
 
   group('WorkoutHistoryProvider', () {
-    test('logSession appends a session with the given date/duration/plan', () async {
+    test('logSession appends a session with the given date/duration/plan',
+        () async {
       final storage = await freshStorage();
       final provider = WorkoutHistoryProvider(storage);
-      provider.logSession(date: '2026-08-07', durationMinutes: 45, planName: 'Push Pull Legs');
+      provider.logSession(
+          date: '2026-08-07', durationMinutes: 45, planName: 'Push Pull Legs');
       expect(provider.sessions.single.date, '2026-08-07');
       expect(provider.sessions.single.durationMinutes, 45);
       expect(provider.sessions.single.planName, 'Push Pull Legs');
@@ -203,6 +270,69 @@ void main() {
       provider.mergeParsedPr(deadlift: 150); // no date
       expect(provider.lifts.deadlift.pr, 150);
       expect(provider.lifts.deadlift.prDate, isNull);
+    });
+
+    test('bumpPrIfHigher only updates when the new value beats the current PR',
+        () async {
+      final storage = await freshStorage();
+      final provider = BigLiftsProvider(storage);
+      provider.savePr('squat', 100);
+
+      provider.bumpPrIfHigher('squat', 90, '2026-02-01'); // lower -> no-op
+      expect(provider.lifts.squat.pr, 100);
+      expect(provider.lifts.squat.prDate, isNull);
+
+      provider.bumpPrIfHigher(
+          'squat', 110, '2026-02-01'); // higher -> bumps both
+      expect(provider.lifts.squat.pr, 110);
+      expect(provider.lifts.squat.prDate, '2026-02-01');
+    });
+  });
+
+  group('CustomExercisesProvider', () {
+    test(
+        'add generates a custom: prefixed id that cannot collide with the shared database',
+        () async {
+      final storage = await freshStorage();
+      final provider = CustomExercisesProvider(storage);
+      provider.add('Meine Übung', 'chest');
+
+      expect(provider.items.single.template.id, startsWith('custom:'));
+      expect(provider.templates.single.name, 'Meine Übung');
+    });
+
+    test(
+        'activationFor returns the configured map, or null for none/unknown id',
+        () async {
+      final storage = await freshStorage();
+      final provider = CustomExercisesProvider(storage);
+      provider.add('Meine Übung', 'chest', activation: {MuscleGroup.chest: 80});
+      final id = provider.items.single.template.id;
+
+      expect(provider.activationFor(id), {MuscleGroup.chest: 80});
+      expect(provider.activationFor('does-not-exist'), isNull);
+    });
+
+    test('remove deletes only the matching id', () async {
+      final storage = await freshStorage();
+      final provider = CustomExercisesProvider(storage);
+      provider.add('A', 'chest');
+      provider.add('B', 'back');
+      final idToRemove = provider.items.first.template.id;
+
+      provider.remove(idToRemove);
+
+      expect(provider.items.length, 1);
+      expect(provider.items.single.template.name, 'B');
+    });
+
+    test('persists across a reload from the same storage', () async {
+      final storage = await freshStorage();
+      CustomExercisesProvider(storage).add('Persisted', 'legs');
+      await Future<void>.delayed(Duration.zero);
+
+      final reloaded = CustomExercisesProvider(storage);
+      expect(reloaded.templates.single.name, 'Persisted');
     });
   });
 

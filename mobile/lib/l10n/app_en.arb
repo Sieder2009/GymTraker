@@ -397,5 +397,57 @@
   },
   "actionReorderExercises": "Reorder",
   "titleReorderExercises": "Exercise Order",
-  "hintReorderExercises": "Drag to reorder the exercises still ahead of you"
+  "hintReorderExercises": "Drag to reorder the exercises still ahead of you",
+  "toastNewPr": "🏆 New PR on {exercise}: {weight} kg × {reps}",
+  "@toastNewPr": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "labelCompletedExercises": "Completed",
+  "labelCurrentExerciseInSession": "In progress",
+  "labelUpcomingExercises": "Coming up",
+  "actionLoadPplExample": "Load PPL example",
+  "examplePplPlanName": "Push/Pull/Legs",
+  "toastPplPlanLoaded": "PPL plan added",
+  "tabAnalyticsAchievements": "Achievements",
+  "achievementPathConsistency": "Training streak",
+  "achievementPathTotalWorkouts": "Total workouts",
+  "achievementPathTotalVolume": "Total volume",
+  "achievementPathPrCount": "Personal records",
+  "achievementProgressToNext": "{remaining} to go until the next tier",
+  "@achievementProgressToNext": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "achievementAllTiersUnlocked": "All tiers unlocked",
+  "toastAchievementUnlocked": "🎖 New tier: {path}",
+  "@toastAchievementUnlocked": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "titleMuscleFilter": "Filter by muscle",
+  "hintMuscleFilterOrManual": "Tap a body part, or pick a category manually below",
+  "actionCreateCustomExercise": "+ Create custom exercise",
+  "labelCategory": "Category",
+  "toastCustomExerciseSaved": "Exercise saved",
+  "labelCustomExercise": "Custom exercise",
+  "actionSaveToFiles": "Save/share as file",
+  "actionImportFromFile": "Choose file",
+  "backupFileHint": "Save the exported file to e.g. iCloud Drive or Google Drive to import it on another device later — there's no server of ours involved, the file only goes wherever you choose to put it.",
+  "toastFileImported": "File loaded"
 }

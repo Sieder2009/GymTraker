@@ -7,6 +7,7 @@ import '../models/day.dart';
 import '../models/exercise.dart';
 import '../models/exercise_set.dart';
 import '../models/program.dart';
+import '../state/custom_exercises_provider.dart';
 import '../state/programs_provider.dart';
 import '../state/toast_provider.dart';
 import '../state/train_state_provider.dart';
@@ -40,7 +41,8 @@ class _DraftExercise {
 }
 
 class _DraftDay {
-  _DraftDay({required this.label, this.rest = false, List<_DraftExercise>? exercises})
+  _DraftDay(
+      {required this.label, this.rest = false, List<_DraftExercise>? exercises})
       : labelController = TextEditingController(text: label),
         exercises = exercises ?? [];
 
@@ -132,7 +134,9 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
           : d.exercises.where((e) => e.name.text.trim().isNotEmpty).map((e) {
               final parsedSets = int.tryParse(e.sets.text.trim()) ?? 1;
               final setCount = parsedSets < 1 ? 1 : parsedSets;
-              final w = double.tryParse(e.weight.text.trim().replaceAll(',', '.')) ?? 0;
+              final w =
+                  double.tryParse(e.weight.text.trim().replaceAll(',', '.')) ??
+                      0;
               final r = e.reps.text.trim().isEmpty ? '—' : e.reps.text.trim();
               return Exercise.fresh(
                 e.name.text.trim(),
@@ -142,7 +146,9 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
                 muscleActivation: e.muscleActivation,
               );
             }).toList();
-      final label = d.labelController.text.trim().isEmpty ? d.label : d.labelController.text.trim();
+      final label = d.labelController.text.trim().isEmpty
+          ? d.label
+          : d.labelController.text.trim();
       return Day(label: label, rest: isRest, exercises: exercises);
     }).toList();
 
@@ -155,8 +161,11 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
     );
 
     context.read<ProgramsProvider>().addProgram(program);
-    final idx = todayIndexForProgram(mode: program.mode, currentDayIdx: program.currentDayIdx);
-    context.read<TrainStateProvider>().selectPlan(program.id, viewedDayIdx: idx);
+    final idx = todayIndexForProgram(
+        mode: program.mode, currentDayIdx: program.currentDayIdx);
+    context
+        .read<TrainStateProvider>()
+        .selectPlan(program.id, viewedDayIdx: idx);
     context.read<ToastProvider>().show(t.toastPlanSaved);
     Navigator.of(context).pop();
   }
@@ -227,12 +236,14 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
                   child: _mode == 'rotation'
                       ? TextField(
                           controller: day.labelController,
-                          decoration: InputDecoration(labelText: t.labelDesignation),
+                          decoration:
+                              InputDecoration(labelText: t.labelDesignation),
                         )
                       // Weekday labels (Montag..Sonntag) stay in the log
                       // format's German, independent of the UI language —
                       // see the class doc on kWeekdays in data/constants.dart.
-                      : Text(day.label, style: Theme.of(context).textTheme.headlineMedium),
+                      : Text(day.label,
+                          style: Theme.of(context).textTheme.headlineMedium),
                 ),
                 if (_mode == 'weekday') ...[
                   Text(t.labelRestDay),
@@ -249,7 +260,8 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
               ],
             ),
             if (!hidden) ...[
-              for (var j = 0; j < day.exercises.length; j++) _buildExerciseRow(i, j, t),
+              for (var j = 0; j < day.exercises.length; j++)
+                _buildExerciseRow(i, j, t),
               TextButton(
                 onPressed: () => _addExercise(i),
                 child: Text(t.actionAddExercise),
@@ -263,11 +275,23 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
 
   Future<void> _pickExercise(_DraftExercise ex) async {
     final picked = await showExercisePicker(context);
-    if (picked != null) ex.name.text = picked.name;
+    if (picked == null || !mounted) return;
+    ex.name.text = picked.name;
+    // A custom exercise's fine-grained muscle config (if it has one) should
+    // carry straight into this plan instead of starting blank again --
+    // otherwise "reusable" custom exercises would only reuse the name.
+    final customActivation =
+        context.read<CustomExercisesProvider>().activationFor(picked.id);
+    if (customActivation != null) {
+      setState(() => ex.muscleActivation = {
+            for (final e in customActivation.entries) e.key.name: e.value,
+          });
+    }
   }
 
   Future<void> _configureMuscles(_DraftExercise ex) async {
-    final result = await showMuscleActivationEditor(context, initial: ex.muscleActivation);
+    final result =
+        await showMuscleActivationEditor(context, initial: ex.muscleActivation);
     if (result != null) setState(() => ex.muscleActivation = result);
   }
 
@@ -315,7 +339,8 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
               Expanded(
                 child: TextField(
                   controller: ex.weight,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(hintText: t.hintWeightKg),
                 ),
               ),
@@ -327,10 +352,13 @@ class _PlanEditorScreenState extends State<PlanEditorScreen> {
           ),
           TextButton.icon(
             onPressed: () => _configureMuscles(ex),
-            icon: Icon(Icons.accessibility_new, size: 16, color: hasMuscles ? colors.accent : colors.mut),
+            icon: Icon(Icons.accessibility_new,
+                size: 16, color: hasMuscles ? colors.accent : colors.mut),
             label: Text(
               hasMuscles ? t.titleMuscleEditor : t.actionConfigureMuscles,
-              style: TextStyle(color: hasMuscles ? colors.accent : colors.mut, fontSize: 12.5),
+              style: TextStyle(
+                  color: hasMuscles ? colors.accent : colors.mut,
+                  fontSize: 12.5),
             ),
           ),
         ],

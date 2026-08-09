@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/exercise_muscle_map.dart';
 import '../l10n/app_localizations.dart';
 import '../models/exercise_template.dart';
+import '../state/custom_exercises_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/detailed_body_diagram.dart';
@@ -67,6 +69,14 @@ class _ExerciseDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final colors = Theme.of(context).extension<AppColors>()!;
+    // Custom exercises can never appear in the compile-time `_byId` map
+    // (see exercise_muscle_map.dart), so their fine-grained activation, if
+    // any was configured, lives in CustomExercisesProvider instead --
+    // falling back to the same category default any unrecognized id gets.
+    final customActivation =
+        context.watch<CustomExercisesProvider>().activationFor(exercise.id);
+    final activation =
+        customActivation ?? muscleActivationForExercise(exercise);
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -74,7 +84,7 @@ class _ExerciseDetailSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             DetailedBodyDiagram(
-              activation: muscleActivationForExercise(exercise),
+              activation: activation,
               size: 170,
               enableZoom: true,
             ),

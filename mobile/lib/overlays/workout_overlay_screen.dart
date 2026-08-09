@@ -3,9 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../analytics/achievements_engine.dart';
+import '../analytics/analytics_engine.dart';
 import '../data/constants.dart';
+import '../data/lift_categories.dart';
 import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
+import '../state/big_lifts_provider.dart';
 import '../state/health_provider.dart';
 import '../state/programs_provider.dart';
 import '../state/toast_provider.dart';
@@ -23,12 +27,41 @@ String _formatElapsed(Duration d) {
   return h > 0 ? '$h:$mm:$ss' : '$mm:$ss';
 }
 
+/// Lowest number in a target-reps string like "8" or "8-10" -- used as a
+/// conservative starting point for the actual-reps stepper (better to
+/// nudge up from a number the user definitely hit than default to the top
+/// of the range and imply they always hit it without logging anything).
+int _lowRepBound(String r) {
+  final numbers =
+      RegExp(r'\d+').allMatches(r).map((m) => int.parse(m.group(0)!)).toList();
+  if (numbers.isEmpty) return 0;
+  return numbers.reduce((a, b) => a < b ? a : b);
+}
+
+/// Short label for a just-unlocked achievement path's toast -- mirrors
+/// `progress_screen.dart`'s `_AchievementsTab._pathLabel` (kept separate
+/// rather than shared, since `achievements_engine.dart` itself stays
+/// l10n-free, matching `analytics_engine.dart`'s existing convention).
+String _pathLabel(AppLocalizations t, AchievementPathId id) {
+  switch (id) {
+    case AchievementPathId.consistency:
+      return t.achievementPathConsistency;
+    case AchievementPathId.totalWorkouts:
+      return t.achievementPathTotalWorkouts;
+    case AchievementPathId.totalVolume:
+      return t.achievementPathTotalVolume;
+    case AchievementPathId.prCount:
+      return t.achievementPathPrCount;
+  }
+}
+
 /// Guided, sequential set-by-set workout session, ported from
 /// `WorkoutOverlay.svelte` and since extended with a live session clock,
-/// a wall-clock rest timer, and mid-session exercise reordering.
+/// a wall-clock rest timer, actual weight+rep tracking, PR detection, and
+/// a full session overview (completed/current/upcoming, with reordering).
 ///
-/// Weight adjustments persist immediately via [ProgramsProvider] even if
-/// the screen is force-closed mid-rest — the [_ticker] is cancelled in
+/// Weight/rep adjustments persist immediately via [ProgramsProvider] even
+/// if the screen is force-closed mid-rest — the [_ticker] is cancelled in
 /// [dispose], which `Navigator.pop` reliably triggers.
 ///
 /// Both the elapsed-session clock and the rest countdown are computed from
@@ -85,7 +118,12 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _order = List.generate(_rawExercises().length, (i) => i);
+    final raw = _rawExercises();
+    _order = List.generate(raw.length, (i) => i);
+    // A repeating weekday plan comes back around every week -- without
+    // this, every set from last time would still show as "done" the
+    // moment this screen opens, since Exercise.done is otherwise one-way.
+    _programs.resetSessionProgress(raw);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
 
@@ -112,18 +150,6 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
         () {}); // just re-render the live clock / rest ring off DateTime.now()
   }
 
-  /// Best-effort numeric rep count from a target-reps string like "8" or a
-  /// range like "8-10" (averaged) — used only to estimate session volume,
-  /// since the guided workout doesn't collect actual reps performed.
-  static double _repsForVolume(String r) {
-    final numbers = RegExp(r'\d+(?:[.,]\d+)?')
-        .allMatches(r)
-        .map((m) => double.parse(m.group(0)!.replaceAll(',', '.')))
-        .toList();
-    if (numbers.isEmpty) return 0;
-    return numbers.reduce((a, b) => a + b) / numbers.length;
-  }
-
   int _totalSets(List<Exercise> exercises) {
     var total = 0;
     for (final e in exercises) {
@@ -144,28 +170,75 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
     _programs.adjustWeight(exercises, _exIdx, _setIdx, delta);
   }
 
-  void _completeSet(List<Exercise> exercises) {
+  void _stepReps(List<Exercise> exercises, int current, int delta) {
+    final next = current + delta;
+    _programs.setActualReps(exercises, _exIdx, _setIdx, next < 0 ? 0 : next);
+  }
+
+  void _completeSet(List<Exercise> exercises, int reps) {
+    final t = AppLocalizations.of(context)!;
+    _programs.setActualReps(exercises, _exIdx, _setIdx, reps);
+    _programs.setRpe(exercises, _exIdx, _setIdx, _rpe);
     _programs.toggleSet(exercises, _exIdx, _setIdx);
 
-    final set = exercises[_exIdx].sets[_setIdx];
-    _sessionVolumeKg += set.w * _repsForVolume(set.r);
+    final ex = exercises[_exIdx];
+    _sessionVolumeKg += ex.sets[_setIdx].w * reps;
     _sessionSets += 1;
 
-    final currentSets = exercises[_exIdx].sets.length;
+    final currentSets = ex.sets.length;
     final isLastSetOfExercise = _setIdx >= currentSets - 1;
     final isLastExercise = _exIdx >= exercises.length - 1;
+
+    // Feeds the guided workout's actual performance into the same
+    // Exercise.history the manual "save exercise log" flow already writes
+    // to -- previously only that manual flow ever populated it, so no
+    // exercise outside bench/deadlift/squat could ever show a PR from a
+    // guided session. Comparing the estimated 1RM before/after appending
+    // is what actually detects "is this a new best."
+    String? prMessage;
+    if (isLastSetOfExercise) {
+      final previousBest = bestEstimatedOneRepMax(ex);
+      _programs.appendGuidedHistoryEntry(exercises, _exIdx);
+      final newBest = bestEstimatedOneRepMax(ex);
+      if (newBest != null && (previousBest == null || newBest > previousBest)) {
+        var maxWeight = 0.0;
+        var repsAtMax = 0;
+        for (final s in ex.sets) {
+          if (s.w > maxWeight) {
+            maxWeight = s.w;
+            repsAtMax = s.actualReps ?? 0;
+          }
+        }
+        prMessage = t.toastNewPr(ex.name, fmt1(maxWeight), repsAtMax);
+        final liftCategory = liftCategoryForName(ex.name);
+        if (liftCategory != null) {
+          final bigLifts = context.read<BigLiftsProvider>();
+          bigLifts.addEntry(liftCategory.key, maxWeight);
+          bigLifts.bumpPrIfHigher(liftCategory.key, maxWeight, todayIso());
+        }
+      }
+    }
 
     if (isLastSetOfExercise && isLastExercise) {
       final plan = _programs.byId(widget.programId)!;
       _programs.finishWorkout(plan);
       final minutes = DateTime.now().difference(_startedAt).inMinutes;
-      context.read<WorkoutHistoryProvider>().logSession(
-            date: todayIso(),
-            durationMinutes: minutes < 1 ? 1 : minutes,
-            planName: plan.name,
-            totalVolumeKg: _sessionVolumeKg,
-            totalSets: _sessionSets,
-          );
+
+      final history = context.read<WorkoutHistoryProvider>();
+      final beforeAchievements = computeAchievements(
+          sessions: history.sessions, programs: _programs.programs);
+      history.logSession(
+        date: todayIso(),
+        durationMinutes: minutes < 1 ? 1 : minutes,
+        planName: plan.name,
+        totalVolumeKg: _sessionVolumeKg,
+        totalSets: _sessionSets,
+      );
+      final afterAchievements = computeAchievements(
+          sessions: history.sessions, programs: _programs.programs);
+      final unlocked =
+          newlyUnlockedTiers(beforeAchievements, afterAchievements);
+
       // Best-effort, never blocks finishing the workout — Health Connect/
       // HealthKit access can fail for reasons entirely outside the app's
       // control (not connected, permission revoked, ...).
@@ -174,11 +247,25 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
             end: DateTime.now(),
             title: plan.name,
           ));
+
+      // ToastProvider only shows one message at a time (a second call
+      // silently drops the first) -- a PR, a newly-unlocked achievement,
+      // and "workout finished" could all be true on the same last set, so
+      // they're combined into one string rather than racing each other.
+      final parts = [
+        if (prMessage != null) prMessage,
+        for (final id in unlocked.keys)
+          t.toastAchievementUnlocked(_pathLabel(t, id)),
+      ];
       context
           .read<ToastProvider>()
-          .show(AppLocalizations.of(context)!.toastWorkoutFinished);
+          .show(parts.isEmpty ? t.toastWorkoutFinished : parts.join(' • '));
       Navigator.of(context).pop();
       return;
+    }
+
+    if (prMessage != null) {
+      context.read<ToastProvider>().show(prMessage);
     }
 
     final restSeconds = exercises[_exIdx].rest;
@@ -203,18 +290,18 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
     });
   }
 
-  Future<void> _openReorderSheet() async {
-    // Only the exercises still ahead of the current one are reorderable —
-    // rearranging ones already done (or the one mid-set right now) would
-    // desync the visible "done" dots from what's actually logged.
+  Future<void> _openSessionOverview() async {
+    final completed = _order.sublist(0, _exIdx);
+    final current = _order[_exIdx];
     final upcoming = _order.sublist(_exIdx + 1);
-    if (upcoming.isEmpty) return;
     final reordered = await showModalBottomSheet<List<int>>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _ReorderSheet(
+      builder: (ctx) => _SessionOverviewSheet(
+        completedIndices: completed,
+        currentIndex: current,
         upcomingIndices: upcoming,
-        exerciseName: (i) => _rawExercises()[i].name,
+        exerciseAt: (i) => _rawExercises()[i],
       ),
     );
     if (reordered != null) {
@@ -250,9 +337,9 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
     final sets = ex.sets;
     final weight = sets[_setIdx].w;
     final targetReps = sets[_setIdx].r;
+    final actualReps = sets[_setIdx].actualReps ?? _lowRepBound(targetReps);
     final isLast = _exIdx == exercises.length - 1 && _setIdx == sets.length - 1;
     final progress = _doneBefore(exercises) / _totalSets(exercises);
-    final hasUpcoming = _exIdx < exercises.length - 1;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -275,9 +362,9 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.swap_vert),
+                icon: const Icon(Icons.list_alt),
                 tooltip: t.actionReorderExercises,
-                onPressed: hasUpcoming ? _openReorderSheet : null,
+                onPressed: _openSessionOverview,
               ),
             ],
           ),
@@ -333,6 +420,33 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                iconSize: 26,
+                onPressed: () => _stepReps(exercises, actualReps, -1),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    Text('$actualReps',
+                        style: Theme.of(context).textTheme.headlineMedium),
+                    Text(t.hintRepsPerformed,
+                        style: TextStyle(color: colors.mut, fontSize: 11)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                iconSize: 26,
+                onPressed: () => _stepReps(exercises, actualReps, 1),
+              ),
+            ],
+          ),
           Center(
             child: Text(t.targetReps(targetReps),
                 style: TextStyle(color: colors.mut)),
@@ -374,7 +488,7 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
           ),
           const Spacer(),
           ElevatedButton(
-            onPressed: () => _completeSet(exercises),
+            onPressed: () => _completeSet(exercises, actualReps),
             child: Text(isLast ? t.actionFinishWorkout : t.actionCompleteSet),
           ),
         ],
@@ -411,21 +525,29 @@ class _WorkoutOverlayScreenState extends State<WorkoutOverlayScreen>
   }
 }
 
-/// Drag-to-reorder sheet for the exercises still ahead in this session.
-/// Purely session-local — the caller applies the result to [_order], never
-/// to the saved plan.
-class _ReorderSheet extends StatefulWidget {
-  const _ReorderSheet(
-      {required this.upcomingIndices, required this.exerciseName});
+/// Full session overview: completed exercises (read-only, checkmarked),
+/// the current one (read-only, highlighted), and everything still ahead
+/// (drag-to-reorder, or tap a row to jump it to the front). Purely
+/// session-local — the caller applies the result to `_order`, never to
+/// the saved plan.
+class _SessionOverviewSheet extends StatefulWidget {
+  const _SessionOverviewSheet({
+    required this.completedIndices,
+    required this.currentIndex,
+    required this.upcomingIndices,
+    required this.exerciseAt,
+  });
 
+  final List<int> completedIndices;
+  final int currentIndex;
   final List<int> upcomingIndices;
-  final String Function(int planIndex) exerciseName;
+  final Exercise Function(int planIndex) exerciseAt;
 
   @override
-  State<_ReorderSheet> createState() => _ReorderSheetState();
+  State<_SessionOverviewSheet> createState() => _SessionOverviewSheetState();
 }
 
-class _ReorderSheetState extends State<_ReorderSheet> {
+class _SessionOverviewSheetState extends State<_SessionOverviewSheet> {
   late final List<int> _local;
 
   @override
@@ -434,10 +556,31 @@ class _ReorderSheetState extends State<_ReorderSheet> {
     _local = List.of(widget.upcomingIndices);
   }
 
+  void _jumpTo(int planIdx) {
+    setState(() {
+      _local.remove(planIdx);
+      _local.insert(0, planIdx);
+    });
+    Navigator.of(context).pop(_local);
+  }
+
+  String _setsSubtitle(Exercise ex) =>
+      ex.sets.isEmpty ? '' : '${ex.sets.length} × ${ex.sets.first.r}';
+
+  Widget _sectionHeader(String label, AppColors colors) => Padding(
+        padding: const EdgeInsets.only(bottom: 4, top: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+              color: colors.mut, fontSize: 11, fontWeight: FontWeight.w700),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final colors = Theme.of(context).extension<AppColors>()!;
+    final current = widget.exerciseAt(widget.currentIndex);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -469,28 +612,65 @@ class _ReorderSheetState extends State<_ReorderSheet> {
             ),
             ConstrainedBox(
               constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.5),
-              child: ReorderableListView.builder(
+                  maxHeight: MediaQuery.of(context).size.height * 0.65),
+              child: ListView(
                 shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
-                itemCount: _local.length,
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    final item = _local.removeAt(oldIndex);
-                    _local.insert(newIndex, item);
-                  });
-                },
-                itemBuilder: (context, i) {
-                  final planIdx = _local[i];
-                  return ListTile(
-                    key: ValueKey(planIdx),
-                    leading:
-                        Text('${i + 1}', style: TextStyle(color: colors.mut)),
-                    title: Text(widget.exerciseName(planIdx)),
-                    trailing: const Icon(Icons.drag_handle),
-                  );
-                },
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                children: [
+                  if (widget.completedIndices.isNotEmpty) ...[
+                    _sectionHeader(t.labelCompletedExercises, colors),
+                    for (final i in widget.completedIndices)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.check_circle,
+                            color: colors.green, size: 20),
+                        title: Text(widget.exerciseAt(i).name),
+                        subtitle: Text(_setsSubtitle(widget.exerciseAt(i)),
+                            style: TextStyle(color: colors.mut, fontSize: 12)),
+                      ),
+                  ],
+                  _sectionHeader(t.labelCurrentExerciseInSession, colors),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.play_circle_fill,
+                        color: colors.accent, size: 20),
+                    title: Text(current.name,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, color: colors.accent)),
+                    subtitle: Text(_setsSubtitle(current),
+                        style: TextStyle(color: colors.mut, fontSize: 12)),
+                  ),
+                  if (_local.isNotEmpty) ...[
+                    _sectionHeader(t.labelUpcomingExercises, colors),
+                    ReorderableListView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onReorder: (oldIndex, newIndex) {
+                        setState(() {
+                          if (newIndex > oldIndex) newIndex -= 1;
+                          final item = _local.removeAt(oldIndex);
+                          _local.insert(newIndex, item);
+                        });
+                      },
+                      children: [
+                        for (var i = 0; i < _local.length; i++)
+                          ListTile(
+                            key: ValueKey(_local[i]),
+                            contentPadding: EdgeInsets.zero,
+                            leading: Text('${i + 1}',
+                                style: TextStyle(color: colors.mut)),
+                            title: Text(widget.exerciseAt(_local[i]).name),
+                            subtitle: Text(
+                                _setsSubtitle(widget.exerciseAt(_local[i])),
+                                style:
+                                    TextStyle(color: colors.mut, fontSize: 12)),
+                            trailing: const Icon(Icons.drag_handle),
+                            onTap: () => _jumpTo(_local[i]),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
           ],

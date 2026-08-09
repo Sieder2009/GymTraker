@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../analytics/analytics_engine.dart';
 import '../data/constants.dart';
 import '../data/example_log.dart';
+import '../data/example_ppl_plan.dart';
 import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/program.dart';
@@ -16,6 +17,7 @@ import '../overlays/workout_overlay_screen.dart';
 import '../state/big_lifts_provider.dart';
 import '../state/health_provider.dart';
 import '../state/programs_provider.dart';
+import '../state/toast_provider.dart';
 import '../state/train_state_provider.dart';
 import '../state/workout_history_provider.dart';
 import '../theme/app_colors.dart';
@@ -76,6 +78,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       activeId: trainState.activePlanId,
       onDelete: _deletePlan,
       isDismissible: false,
+      onNewPlan: _newPlan,
+      onLoadPpl: _loadPplExample,
     );
     if (chosen != null) _selectPlan(chosen);
   }
@@ -84,6 +88,25 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final idx =
         todayIndexForProgram(mode: p.mode, currentDayIdx: p.currentDayIdx);
     context.read<TrainStateProvider>().selectPlan(p.id, viewedDayIdx: idx);
+  }
+
+  void _newPlan() {
+    Navigator.of(context).push(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => const PlanEditorScreen(),
+    ));
+  }
+
+  /// Straight from tap to a saved, ready-to-train [Program] -- unlike
+  /// "Beispielplan laden", this skips [ImportLogScreen]/the hand-typed-log
+  /// parser entirely, since [buildExamplePplProgram] already produces a
+  /// valid structured plan (mirrors how [PlanEditorScreen._save] ends).
+  void _loadPplExample() {
+    final t = AppLocalizations.of(context)!;
+    final program = buildExamplePplProgram(name: t.examplePplPlanName);
+    context.read<ProgramsProvider>().addProgram(program);
+    _selectPlan(program);
+    context.read<ToastProvider>().show(t.toastPplPlanLoaded);
   }
 
   void _deletePlan(Program p) {
@@ -129,10 +152,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
     if (programs.isEmpty) {
       return _EmptyState(
-        onNewPlan: () => Navigator.of(context).push(MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) => const PlanEditorScreen(),
-        )),
+        onNewPlan: _newPlan,
         onImportLog: () => Navigator.of(context).push(MaterialPageRoute(
           fullscreenDialog: true,
           builder: (_) => const ImportLogScreen(),
@@ -144,6 +164,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             initialName: t.exampleLogPlanName,
           ),
         )),
+        onLoadPpl: _loadPplExample,
       );
     }
 
@@ -180,6 +201,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 activePlanId: plan.id,
                 onSelectPlan: _selectPlan,
                 onDeletePlan: _deletePlan,
+                onNewPlan: _newPlan,
+                onLoadPpl: _loadPplExample,
               ),
             ],
           ),
@@ -458,11 +481,13 @@ class _EmptyState extends StatelessWidget {
     required this.onNewPlan,
     required this.onImportLog,
     required this.onLoadExample,
+    required this.onLoadPpl,
   });
 
   final VoidCallback onNewPlan;
   final VoidCallback onImportLog;
   final VoidCallback onLoadExample;
+  final VoidCallback onLoadPpl;
 
   @override
   Widget build(BuildContext context) {
@@ -502,6 +527,15 @@ class _EmptyState extends StatelessWidget {
                 label: Text(t.actionLoadExample),
               ),
             ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onLoadPpl,
+                icon: const Icon(Icons.fitness_center, size: 18),
+                label: Text(t.actionLoadPplExample),
+              ),
+            ),
           ],
         ),
       ),
@@ -535,6 +569,8 @@ class _OverflowMenuButton extends StatelessWidget {
     required this.activePlanId,
     required this.onSelectPlan,
     required this.onDeletePlan,
+    required this.onNewPlan,
+    required this.onLoadPpl,
   });
 
   final AppLocalizations t;
@@ -542,6 +578,8 @@ class _OverflowMenuButton extends StatelessWidget {
   final String activePlanId;
   final ValueChanged<Program> onSelectPlan;
   final ValueChanged<Program> onDeletePlan;
+  final VoidCallback onNewPlan;
+  final VoidCallback onLoadPpl;
 
   @override
   Widget build(BuildContext context) {
@@ -560,6 +598,8 @@ class _OverflowMenuButton extends StatelessWidget {
               programs: programs,
               activeId: activePlanId,
               onDelete: onDeletePlan,
+              onNewPlan: onNewPlan,
+              onLoadPpl: onLoadPpl,
             );
             if (chosen != null) onSelectPlan(chosen);
           case _OverflowAction.calendar:

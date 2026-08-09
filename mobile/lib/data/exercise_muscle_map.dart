@@ -12,6 +12,16 @@ Map<MuscleGroup, double> muscleActivationForExercise(ExerciseTemplate ex) {
   return _byId[ex.id] ?? _categoryDefault(ex.category);
 }
 
+/// Whether [ex] meaningfully trains [target] -- the query behind the
+/// "tap a body part to filter" exercise browser. No precomputed reverse
+/// index: [_byId] holds a couple hundred entries, already re-filtered on
+/// every rebuild by category/search text, so one more linear scan here
+/// costs nothing extra.
+bool exerciseWorksMuscle(ExerciseTemplate ex, MuscleGroup target,
+    {double threshold = 30}) {
+  return (muscleActivationForExercise(ex)[target] ?? 0) >= threshold;
+}
+
 Map<MuscleGroup, double> _categoryDefault(String category) {
   switch (category) {
     case 'chest':

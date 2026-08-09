@@ -14,6 +14,7 @@ import 'state/appearance_provider.dart';
 import 'state/athlete_settings_provider.dart';
 import 'state/big_lifts_provider.dart';
 import 'state/body_weight_provider.dart';
+import 'state/custom_exercises_provider.dart';
 import 'state/exercise_database_provider.dart';
 import 'state/gym_photos_provider.dart';
 import 'state/health_provider.dart';
@@ -32,7 +33,8 @@ import 'widgets/app_shell.dart';
 /// every pushed overlay route stays a descendant of this provider tree, so
 /// it can read/watch the same app-wide state as the 3 tab screens.
 class IronpeakApp extends StatelessWidget {
-  const IronpeakApp({super.key, required this.storage, required this.photosDir});
+  const IronpeakApp(
+      {super.key, required this.storage, required this.photosDir});
 
   final StorageService storage;
   final Directory photosDir;
@@ -50,14 +52,19 @@ class IronpeakApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BodyWeightProvider(storage)),
         ChangeNotifierProvider(create: (_) => AthleteSettingsProvider(storage)),
         ChangeNotifierProvider(create: (_) => WorkoutHistoryProvider(storage)),
-        ChangeNotifierProvider(create: (_) => GymPhotosProvider(storage, photosDir)),
+        ChangeNotifierProvider(
+            create: (_) => GymPhotosProvider(storage, photosDir)),
         ChangeNotifierProvider(create: (_) => HealthProvider(HealthService())),
-        ChangeNotifierProvider(create: (_) => ExerciseDatabaseProvider(storage, ExerciseDatabaseService())),
+        ChangeNotifierProvider(
+            create: (_) =>
+                ExerciseDatabaseProvider(storage, ExerciseDatabaseService())),
+        ChangeNotifierProvider(create: (_) => CustomExercisesProvider(storage)),
         ChangeNotifierProvider(create: (_) => ActiveScreenProvider()),
         ChangeNotifierProvider(create: (_) => ToastProvider()),
         ChangeNotifierProvider(create: (_) => AppearanceProvider(storage)),
         ChangeNotifierProvider(create: (_) => UpdateProvider()),
-        ChangeNotifierProvider(create: (_) => ReminderProvider(storage, NotificationService())),
+        ChangeNotifierProvider(
+            create: (_) => ReminderProvider(storage, NotificationService())),
       ],
       child: Consumer3<ThemeProvider, AppearanceProvider, LocaleProvider>(
         builder: (context, theme, appearance, localeProvider, _) {

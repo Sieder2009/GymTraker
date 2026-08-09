@@ -91,8 +91,13 @@ Daten, nie aus Platzhaltern:
   wählbar).
 - Automatischer Update-Check gegen GitHub Releases inkl. Hintergrund-
   Download; Installation bleibt ein bewusster Tap.
-- Backup/Restore als Textexport, individuelle Primär-/Sekundärfarbe,
-  automatischer System-Light/Dark-Mode mit manuellem Override.
+- Backup/Restore als Textexport (Zwischenablage) **oder** als Datei über
+  das native Teilen-Menü — landet z. B. direkt in iCloud Drive oder Google
+  Drive, zum Mitnehmen auf ein anderes Gerät. Kein eigener Account, kein
+  eigener Server: die Datei geht nur dorthin, wo man sie selbst hinlegt,
+  kein automatischer Hintergrund-Sync.
+- Individuelle Primär-/Sekundärfarbe, automatischer System-Light/Dark-Mode
+  mit manuellem Override.
 - 10 Sprachen: Deutsch, Englisch, Spanisch, Französisch, Italienisch,
   Portugiesisch, Niederländisch, Türkisch, Polnisch, Russisch.
 
@@ -296,4 +301,8 @@ Arbeit dieses Projekts.
 Beide Apps speichern ausschließlich lokal auf dem jeweiligen Gerät (SQLite
 bzw. `localStorage`). Es gibt keinen eigenen Server und kein Konto — die
 einzige Netzwerk-Kommunikation der Mobile-App ist das Laden der
-Übungsdatenbank und der Update-Check gegen die öffentliche GitHub-API.
+Übungsdatenbank und der Update-Check gegen die öffentliche GitHub-API. Der
+Datei-Export im Backup-Menü nutzt das native Teilen-Menü des Betriebssystems
+(z. B. um die Datei in iCloud Drive oder Google Drive zu speichern) — das
+ist eine bewusste Aktion des Nutzers, kein automatischer Cloud-Sync, und die
+App selbst lädt dabei nichts irgendwohin hoch.
