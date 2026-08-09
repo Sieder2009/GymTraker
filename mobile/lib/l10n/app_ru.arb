@@ -1,15 +1,15 @@
 {
   "@@locale": "ru",
-
   "tabTraining": "Тренировки",
   "tabStrength": "Сила",
   "tabProgress": "Прогресс",
-
   "actionSave": "Сохранить",
   "actionSaveAndNext": "Сохранить и далее",
   "actionCancel": "Отмена",
   "actionApply": "Применить",
-  "actionBack": "Назад",
+  "actionBack": "Сзади",
+  "actionLightMode": "Светлая тема",
+  "actionDarkMode": "Тёмная тема",
   "actionAnalyze": "Анализировать",
   "actionAddExercise": "+ Добавить упражнение",
   "actionAddDayOrRoutine": "+ Добавить день/программу",
@@ -20,11 +20,12 @@
   "actionImportLog": "Импортировать журнал",
   "actionLoadExample": "Загрузить пример плана",
   "actionSavePlan": "Сохранить план",
+  "infoImportCreatesNewPlan": "Создаёт новый план — существующие планы остаются без изменений.",
+  "infoImportSummary": "{days} дней · {exercises} упражнений найдено",
   "actionStartWorkout": "Начать тренировку",
   "actionFinishWorkout": "Завершить тренировку",
   "actionCompleteSet": "Завершить подход",
   "actionSkipRest": "Пропустить →",
-
   "titleNewPlan": "Новый план",
   "titleImportLog": "Импортировать журнал",
   "titlePlanPicker": "Выбрать план тренировок",
@@ -34,7 +35,6 @@
   "headerHistory": "ИСТОРИЯ",
   "headerRpe": "RPE",
   "headerDetectedPrs": "Обнаруженные рекорды",
-
   "labelPlanName": "Название плана",
   "labelDesignation": "Название",
   "hintExercise": "Упражнение",
@@ -44,12 +44,11 @@
   "hintWeightTodayKg": "кг сегодня",
   "labelPrKg": "Рекорд (кг)",
   "hintLogPaste": "Вставьте журнал сюда …",
+  "hintExampleFormat": "Пример:",
   "hintExerciseHistoryPaste": "Вставьте текст для этого упражнения сюда …",
-
   "modeWeekday": "День недели",
   "modeRotation": "Ротация",
   "labelRestDay": "День отдыха",
-
   "emptyNoPlan": "Пока нет плана тренировок.",
   "emptyNoPlanShort": "Пока нет плана тренировок.",
   "emptyRestDay": "День отдыха — сегодня ничего не запланировано.",
@@ -60,14 +59,12 @@
   "infoDragToChange": "Перетащите, чтобы изменить, или нажмите на число, чтобы ввести его",
   "titleEnterWeight": "Введите вес",
   "infoHistoryLegend": "X = использован меньший вес · M = использован больший вес · ✓ = выполнено, без числа повторений",
-
   "toastNameRequired": "Введите название",
   "toastPlanSaved": "План тренировок сохранён",
   "toastLogImported": "Журнал импортирован",
   "toastLogRequired": "Сначала вставьте журнал.",
   "toastHistoryImported": "История импортирована",
   "toastWorkoutFinished": "Тренировка завершена",
-
   "labelEntry": "Запись",
   "labelCurrent": "Текущий",
   "labelBodyweightAbbr": "СВ",
@@ -77,7 +74,6 @@
   "labelKraftBalance": "Баланс силы",
   "radarHint": "Становая тяга, жим лёжа и присед — относительно самого сильного из трёх упражнений в текущем плане.",
   "labelStartToNow": "НАЧАЛО → СЕЙЧАС",
-
   "daySubtitleRest": "{day} · День отдыха",
   "daySubtitleWorkouts": "{day} · {count} тренировок",
   "exerciseSetProgress": "Упражнение {exIdx}/{exTotal} · Подход {setIdx}/{setTotal}",
@@ -87,10 +83,8 @@
   "prValue": "Рекорд {value} кг",
   "dayNumber": "День {num}",
   "planSubtitleWeekday": "Недельный план",
-
   "exampleLogPlanName": "Пример плана",
   "actionAllPlans": "Все планы",
-
   "weekdayMonShort": "Пн",
   "weekdayTueShort": "Вт",
   "weekdayWedShort": "Ср",
@@ -98,10 +92,8 @@
   "weekdayFriShort": "Пт",
   "weekdaySatShort": "Сб",
   "weekdaySunShort": "Вс",
-
   "labelBodyweightTitle": "Вес тела",
   "actionDelete": "Удалить",
-
   "titleBackup": "Резервная копия и восстановление",
   "backupExportHint": "Скопируйте свои данные, чтобы сохранить их в надёжном месте или перенести на другое устройство.",
   "actionCopyToClipboard": "Скопировать в буфер обмена",
@@ -113,7 +105,6 @@
   "restoreConfirmBody": "Это перезапишет все планы, историю и настройки на этом устройстве. Это действие необратимо.",
   "toastRestoreDone": "Восстановлено — перезапустите приложение, чтобы увидеть свои данные.",
   "toastRestoreInvalid": "Это не похоже на действительную резервную копию.",
-
   "labelPowerliftingScore": "Пауэрлифтинг-очки",
   "labelTotal": "Тотал",
   "labelDotsScore": "Очки DOTS",
@@ -124,14 +115,12 @@
   "actionCalculate": "Рассчитать",
   "estimated1rmResult": "Оценка 1ПМ: {value} кг",
   "hintRepsPerformed": "Выполнено повторений",
-
   "titleCalendar": "Календарь тренировок",
   "calendarMonthSummary": "{count} тренировок · {hours} ч",
   "emptyNoSessionsThisDay": "В этот день тренировок не записано.",
   "labelMinutesShort": "{minutes} мин",
   "calendarPrevMonth": "Предыдущий месяц",
   "calendarNextMonth": "Следующий месяц",
-
   "greetingMorning": "Доброе утро",
   "greetingAfternoon": "Добрый день",
   "greetingEvening": "Добрый вечер",
@@ -154,7 +143,6 @@
   "unitDays": "{days} дн.",
   "labelPlateauDetected": "ОБНАРУЖЕНО ПЛАТО",
   "plateauBody": "Почти незаметное изменение в «{lift}» за последние {days} дн.",
-
   "titleGallery": "Галерея",
   "actionChooseFromGallery": "Выбрать из галереи",
   "actionTakePhoto": "Сделать фото",
@@ -162,14 +150,12 @@
   "actionAddPhoto": "+ Добавить фото",
   "deletePhotoTitle": "Удалить фото?",
   "deletePhotoBody": "Это фото будет удалено без возможности восстановления.",
-
   "titleHealthSync": "Данные о здоровье",
   "actionConnectHealth": "Подключить",
   "labelStepsToday": "Шаги сегодня",
   "actionSyncWeightFromHealth": "Импортировать из Здоровья",
   "toastWeightSynced": "Вес тела импортирован из приложения Здоровье",
   "toastNoHealthWeight": "Запись о весе в приложении Здоровье не найдена",
-
   "titleExercisePicker": "Выбрать упражнение",
   "hintSearchExercise": "Поиск упражнения…",
   "actionPickFromList": "Выбрать из списка",
@@ -186,10 +172,8 @@
   "categoryAll": "Все",
   "deletePlanTitle": "Удалить план?",
   "deletePlanBody": "«{name}» и вся его история будут удалены без возможности восстановления.",
-
   "settingsLanguage": "Язык",
   "languageSystem": "Системный по умолчанию",
-
   "tabAnalyticsOverview": "Обзор",
   "tabAnalyticsStrength": "Сила",
   "tabAnalyticsVolume": "Объём",
@@ -207,20 +191,37 @@
   "chartTitleWeightProgress": "Прогресс веса",
   "chartEmptyExercise": "Запишите это упражнение в 2+ разных дня, чтобы увидеть тренд.",
   "labelLast8Weeks": "Последние 8 недель",
-
   "titleSettings": "Настройки",
   "headerAppVersion": "ВЕРСИЯ ПРИЛОЖЕНИЯ",
   "labelInstalledVersion": "Установлена: {version}",
-  "@labelInstalledVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@labelInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpdateAvailable": "Доступна новая версия: {version}",
-  "@labelUpdateAvailable": { "placeholders": { "version": { "type": "String" } } },
+  "@labelUpdateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpToDate": "У вас последняя версия.",
   "actionCheckForUpdates": "Проверить обновления",
   "actionChecking": "Проверка…",
   "actionDownloadUpdate": "Скачать",
   "actionInstallUpdate": "Установить",
   "labelDownloadingUpdate": "Загрузка обновления… {percent}%",
-  "@labelDownloadingUpdate": { "placeholders": { "percent": { "type": "int" } } },
+  "@labelDownloadingUpdate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "labelUpdateReady": "Обновление готово к установке",
   "updateErrorNoRelease": "Пока нет опубликованной версии для сравнения.",
   "updateErrorBadResponse": "GitHub ответил с ошибкой.",
@@ -228,6 +229,7 @@
   "updateErrorNoVersion": "В ответе не было номера версии.",
   "headerAppearance": "ВНЕШНИЙ ВИД",
   "labelPrimaryColor": "Основной цвет",
+  "labelDarkMode": "Тёмная тема",
   "labelSecondaryColor": "Дополнительный цвет",
   "actionResetColors": "Сбросить",
   "headerReminders": "НАПОМИНАНИЯ",
@@ -237,10 +239,8 @@
   "notificationTitle": "Ironpeak Fitness",
   "notificationBody": "Время тренироваться.",
   "headerGeneral": "ОБЩИЕ",
-
   "titleMuscleEditor": "Активация мышц",
   "actionFront": "Спереди",
-  "actionBack": "Сзади",
   "labelIntensity": "Интенсивность",
   "hintTapMuscle": "Нажмите на мышцу, чтобы указать, насколько сильно она нагружается",
   "actionConfigureMuscles": "Настроить мышцы",
@@ -262,11 +262,18 @@
   "muscleTriceps": "Трицепс",
   "muscleGlutes": "Ягодицы",
   "muscleHamstrings": "Бицепс бедра",
-
   "headerHelp": "ПОМОЩЬ",
   "actionEmail": "Эл. почта",
   "actionCall": "Позвонить",
-
   "titleEnterLiftPr": "Ввод ПМ: {lift}",
-  "@titleEnterLiftPr": { "placeholders": { "lift": { "type": "String" } } }
+  "@titleEnterLiftPr": {
+    "placeholders": {
+      "lift": {
+        "type": "String"
+      }
+    }
+  },
+  "actionReorderExercises": "Изменить порядок",
+  "titleReorderExercises": "Порядок упражнений",
+  "hintReorderExercises": "Перетащите, чтобы изменить порядок оставшихся упражнений"
 }

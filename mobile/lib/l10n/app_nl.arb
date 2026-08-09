@@ -1,15 +1,15 @@
 {
   "@@locale": "nl",
-
   "tabTraining": "Training",
   "tabStrength": "Kracht",
   "tabProgress": "Voortgang",
-
   "actionSave": "Opslaan",
   "actionSaveAndNext": "Opslaan & volgende",
   "actionCancel": "Annuleren",
   "actionApply": "Toepassen",
-  "actionBack": "Terug",
+  "actionBack": "Achterkant",
+  "actionLightMode": "Lichte modus",
+  "actionDarkMode": "Donkere modus",
   "actionAnalyze": "Analyseren",
   "actionAddExercise": "+ Oefening toevoegen",
   "actionAddDayOrRoutine": "+ Dag/routine toevoegen",
@@ -20,11 +20,12 @@
   "actionImportLog": "Logboek importeren",
   "actionLoadExample": "Voorbeeldschema laden",
   "actionSavePlan": "Schema opslaan",
+  "infoImportCreatesNewPlan": "Maakt een nieuw plan aan; je bestaande plannen blijven ongewijzigd.",
+  "infoImportSummary": "{days} dagen · {exercises} oefeningen herkend",
   "actionStartWorkout": "Training starten",
   "actionFinishWorkout": "Training afronden",
   "actionCompleteSet": "Set voltooien",
   "actionSkipRest": "Overslaan →",
-
   "titleNewPlan": "Nieuw schema",
   "titleImportLog": "Logboek importeren",
   "titlePlanPicker": "Trainingsschema kiezen",
@@ -34,7 +35,6 @@
   "headerHistory": "GESCHIEDENIS",
   "headerRpe": "RPE",
   "headerDetectedPrs": "Gevonden PR's",
-
   "labelPlanName": "Naam van het schema",
   "labelDesignation": "Label",
   "hintExercise": "Oefening",
@@ -44,12 +44,11 @@
   "hintWeightTodayKg": "kg vandaag",
   "labelPrKg": "PR (kg)",
   "hintLogPaste": "Plak hier het logboek …",
+  "hintExampleFormat": "Voorbeeld:",
   "hintExerciseHistoryPaste": "Plak hier de tekst voor deze oefening …",
-
   "modeWeekday": "Weekdag",
   "modeRotation": "Rotatie",
   "labelRestDay": "Rustdag",
-
   "emptyNoPlan": "Nog geen trainingsschema aangemaakt.",
   "emptyNoPlanShort": "Nog geen trainingsschema.",
   "emptyRestDay": "Rustdag — vandaag niets gepland.",
@@ -60,14 +59,12 @@
   "infoDragToChange": "Sleep om aan te passen, of tik op het getal om te typen",
   "titleEnterWeight": "Gewicht invoeren",
   "infoHistoryLegend": "X = minder gewicht gebruikt · M = meer gewicht gebruikt · ✓ = gedaan, zonder aantal reps",
-
   "toastNameRequired": "Voer een naam in",
   "toastPlanSaved": "Trainingsschema opgeslagen",
   "toastLogImported": "Logboek geïmporteerd",
   "toastLogRequired": "Plak eerst een logboek.",
   "toastHistoryImported": "Geschiedenis geïmporteerd",
   "toastWorkoutFinished": "Training afgerond",
-
   "labelEntry": "Invoer",
   "labelCurrent": "Huidig",
   "labelBodyweightAbbr": "LG",
@@ -77,7 +74,6 @@
   "labelKraftBalance": "Krachtbalans",
   "radarHint": "Deadlift, bench press en squat, ten opzichte van je sterkste van de drie in het huidige schema.",
   "labelStartToNow": "START → NU",
-
   "daySubtitleRest": "{day} · Rustdag",
   "daySubtitleWorkouts": "{day} · {count} trainingen",
   "exerciseSetProgress": "Oefening {exIdx}/{exTotal} · Set {setIdx}/{setTotal}",
@@ -87,10 +83,8 @@
   "prValue": "PR {value} kg",
   "dayNumber": "Dag {num}",
   "planSubtitleWeekday": "Weekschema",
-
   "exampleLogPlanName": "Voorbeeldschema",
   "actionAllPlans": "Alle schema's",
-
   "weekdayMonShort": "Ma",
   "weekdayTueShort": "Di",
   "weekdayWedShort": "Wo",
@@ -98,10 +92,8 @@
   "weekdayFriShort": "Vr",
   "weekdaySatShort": "Za",
   "weekdaySunShort": "Zo",
-
   "labelBodyweightTitle": "Lichaamsgewicht",
   "actionDelete": "Verwijderen",
-
   "titleBackup": "Back-up & herstellen",
   "backupExportHint": "Kopieer je gegevens om ze veilig te bewaren of over te zetten naar een ander toestel.",
   "actionCopyToClipboard": "Kopiëren naar klembord",
@@ -113,7 +105,6 @@
   "restoreConfirmBody": "Hiermee worden alle schema's, geschiedenis en instellingen op dit toestel overschreven. Dit kan niet ongedaan worden gemaakt.",
   "toastRestoreDone": "Hersteld — start de app opnieuw om je gegevens te zien.",
   "toastRestoreInvalid": "Dit lijkt geen geldige back-up te zijn.",
-
   "labelPowerliftingScore": "Powerlifting-score",
   "labelTotal": "Totaal",
   "labelDotsScore": "DOTS-score",
@@ -124,14 +115,12 @@
   "actionCalculate": "Berekenen",
   "estimated1rmResult": "Geschatte 1RM: {value} kg",
   "hintRepsPerformed": "Uitgevoerde reps",
-
   "titleCalendar": "Trainingskalender",
   "calendarMonthSummary": "{count} trainingen · {hours} u",
   "emptyNoSessionsThisDay": "Geen training vastgelegd op deze dag.",
   "labelMinutesShort": "{minutes} min",
   "calendarPrevMonth": "Vorige maand",
   "calendarNextMonth": "Volgende maand",
-
   "greetingMorning": "Goedemorgen",
   "greetingAfternoon": "Goedemiddag",
   "greetingEvening": "Goedenavond",
@@ -154,7 +143,6 @@
   "unitDays": "{days} dagen",
   "labelPlateauDetected": "PLATEAU GEDETECTEERD",
   "plateauBody": "Nauwelijks meetbare verandering bij {lift} in de afgelopen {days} dagen.",
-
   "titleGallery": "Galerij",
   "actionChooseFromGallery": "Kiezen uit galerij",
   "actionTakePhoto": "Foto maken",
@@ -162,14 +150,12 @@
   "actionAddPhoto": "+ Foto toevoegen",
   "deletePhotoTitle": "Foto verwijderen?",
   "deletePhotoBody": "Deze foto wordt definitief verwijderd.",
-
   "titleHealthSync": "Gezondheidsgegevens",
   "actionConnectHealth": "Verbinden",
   "labelStepsToday": "Stappen vandaag",
   "actionSyncWeightFromHealth": "Importeren uit Gezondheid",
   "toastWeightSynced": "Lichaamsgewicht geïmporteerd uit Gezondheid",
   "toastNoHealthWeight": "Geen gewicht gevonden in Gezondheid",
-
   "titleExercisePicker": "Oefening kiezen",
   "hintSearchExercise": "Oefening zoeken…",
   "actionPickFromList": "Kiezen uit lijst",
@@ -186,10 +172,8 @@
   "categoryAll": "Alle",
   "deletePlanTitle": "Schema verwijderen?",
   "deletePlanBody": "\"{name}\" en de volledige geschiedenis worden definitief verwijderd. Dit kan niet ongedaan worden gemaakt.",
-
   "settingsLanguage": "Taal",
   "languageSystem": "Systeemstandaard",
-
   "tabAnalyticsOverview": "Overzicht",
   "tabAnalyticsStrength": "Kracht",
   "tabAnalyticsVolume": "Volume",
@@ -207,20 +191,37 @@
   "chartTitleWeightProgress": "Gewichtsverloop",
   "chartEmptyExercise": "Log deze oefening op 2+ verschillende dagen om een trend te zien.",
   "labelLast8Weeks": "Laatste 8 weken",
-
   "titleSettings": "Instellingen",
   "headerAppVersion": "APP-VERSIE",
   "labelInstalledVersion": "Geïnstalleerd: {version}",
-  "@labelInstalledVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@labelInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpdateAvailable": "Nieuwe versie beschikbaar: {version}",
-  "@labelUpdateAvailable": { "placeholders": { "version": { "type": "String" } } },
+  "@labelUpdateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpToDate": "Je hebt de nieuwste versie.",
   "actionCheckForUpdates": "Controleren op updates",
   "actionChecking": "Controleren…",
   "actionDownloadUpdate": "Downloaden",
   "actionInstallUpdate": "Installeren",
   "labelDownloadingUpdate": "Update wordt gedownload… {percent}%",
-  "@labelDownloadingUpdate": { "placeholders": { "percent": { "type": "int" } } },
+  "@labelDownloadingUpdate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "labelUpdateReady": "Update klaar om te installeren",
   "updateErrorNoRelease": "Er is nog geen gepubliceerde versie om mee te vergelijken.",
   "updateErrorBadResponse": "GitHub reageerde met een fout.",
@@ -228,6 +229,7 @@
   "updateErrorNoVersion": "Het antwoord bevatte geen versienummer.",
   "headerAppearance": "WEERGAVE",
   "labelPrimaryColor": "Primaire kleur",
+  "labelDarkMode": "Donkere modus",
   "labelSecondaryColor": "Secundaire kleur",
   "actionResetColors": "Reset",
   "headerReminders": "HERINNERINGEN",
@@ -237,10 +239,8 @@
   "notificationTitle": "Ironpeak Fitness",
   "notificationBody": "Tijd om te trainen.",
   "headerGeneral": "ALGEMEEN",
-
   "titleMuscleEditor": "Spieractivatie",
   "actionFront": "Voorkant",
-  "actionBack": "Achterkant",
   "labelIntensity": "Intensiteit",
   "hintTapMuscle": "Tik op een spier om aan te geven hoe zwaar hij wordt belast",
   "actionConfigureMuscles": "Spieren instellen",
@@ -262,11 +262,18 @@
   "muscleTriceps": "Triceps",
   "muscleGlutes": "Bilspieren",
   "muscleHamstrings": "Hamstrings",
-
   "headerHelp": "HULP",
   "actionEmail": "E-mail",
   "actionCall": "Bellen",
-
   "titleEnterLiftPr": "{lift}-PR invoeren",
-  "@titleEnterLiftPr": { "placeholders": { "lift": { "type": "String" } } }
+  "@titleEnterLiftPr": {
+    "placeholders": {
+      "lift": {
+        "type": "String"
+      }
+    }
+  },
+  "actionReorderExercises": "Herschikken",
+  "titleReorderExercises": "Oefeningsvolgorde",
+  "hintReorderExercises": "Sleep om de resterende oefeningen opnieuw te ordenen"
 }

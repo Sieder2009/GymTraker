@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import '../services/update_service.dart';
 import '../state/appearance_provider.dart';
 import '../state/reminder_provider.dart';
+import '../state/theme_provider.dart';
 import '../state/update_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/backup_sheet.dart';
@@ -163,6 +164,7 @@ class _AppearanceSection extends StatelessWidget {
     final t = AppLocalizations.of(context)!;
     final colors = Theme.of(context).extension<AppColors>()!;
     final appearance = context.watch<AppearanceProvider>();
+    final theme = context.watch<ThemeProvider>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,6 +177,18 @@ class _AppearanceSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(t.labelDarkMode, style: Theme.of(context).textTheme.headlineMedium),
+                    ),
+                    Switch(
+                      value: theme.isDark,
+                      onChanged: (_) => context.read<ThemeProvider>().toggle(),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
                 Text(t.labelPrimaryColor, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 10),
                 _ColorSwatchRow(

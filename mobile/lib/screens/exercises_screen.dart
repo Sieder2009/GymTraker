@@ -29,7 +29,8 @@ class ExercisesScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Text(t.tabExercises, style: Theme.of(context).textTheme.headlineLarge),
+            child: Text(t.tabExercises,
+                style: Theme.of(context).textTheme.headlineLarge),
           ),
           Expanded(
             child: Padding(
@@ -72,16 +73,24 @@ class _ExerciseDetailSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DetailedBodyDiagram(activation: muscleActivationForExercise(exercise), size: 150),
+            DetailedBodyDiagram(
+              activation: muscleActivationForExercise(exercise),
+              size: 170,
+              enableZoom: true,
+            ),
             const SizedBox(height: 16),
-            Text(exercise.name, style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+            Text(exercise.name,
+                style: Theme.of(context).textTheme.headlineLarge,
+                textAlign: TextAlign.center),
             const SizedBox(height: 4),
-            Text(categoryLabel(t, exercise.category), style: TextStyle(color: colors.mut)),
+            Text(categoryLabel(t, exercise.category),
+                style: TextStyle(color: colors.mut)),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => launchUrl(_tutorialSearchUrl, mode: LaunchMode.externalApplication),
+                onPressed: () => launchUrl(_tutorialSearchUrl,
+                    mode: LaunchMode.externalApplication),
                 icon: const Icon(Icons.play_circle_outline, size: 18),
                 label: Text(t.actionWatchTutorial),
               ),

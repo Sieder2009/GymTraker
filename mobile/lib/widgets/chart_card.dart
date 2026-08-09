@@ -59,7 +59,8 @@ class LineChartCard extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.headlineMedium),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
-              Text(subtitle!, style: TextStyle(color: colors.mut, fontSize: 12.5)),
+              Text(subtitle!,
+                  style: TextStyle(color: colors.mut, fontSize: 12.5)),
             ],
             const SizedBox(height: 16),
             SizedBox(
@@ -80,12 +81,23 @@ class LineChartCard extends StatelessWidget {
     );
   }
 
-  Widget _buildChart(List<ChartPoint> sorted, Color lineColor, AppColors colors) {
+  Widget _buildChart(
+      List<ChartPoint> sorted, Color lineColor, AppColors colors) {
     final minY = sorted.map((p) => p.value).reduce((a, b) => a < b ? a : b);
     final maxY = sorted.map((p) => p.value).reduce((a, b) => a > b ? a : b);
     final pad = ((maxY - minY).abs() * 0.15).clamp(1.0, double.infinity);
+    // Shared by the grid lines AND the left-axis labels below: passing it
+    // explicitly to both (instead of leaving the labels to fl_chart's own
+    // auto-computed interval) is what keeps every gridline lined up with
+    // its label. Without this, a near-flat series (e.g. several weeks of
+    // 0 volume) makes fl_chart pick a sub-1 interval on its own, and
+    // toStringAsFixed(0) then rounds adjacent fractional ticks (like 0.5
+    // and 1.0) to the same displayed integer -- duplicate-looking labels.
+    final interval = ((maxY - minY + pad * 2) / 3).clamp(0.1, double.infinity);
+    final labelDecimals = interval < 1 ? 1 : 0;
     final spots = [
-      for (var i = 0; i < sorted.length; i++) FlSpot(i.toDouble(), sorted[i].value),
+      for (var i = 0; i < sorted.length; i++)
+        FlSpot(i.toDouble(), sorted[i].value),
     ];
 
     return LineChart(
@@ -94,19 +106,23 @@ class LineChartCard extends StatelessWidget {
         maxY: maxY + pad,
         gridData: FlGridData(
           drawVerticalLine: false,
-          horizontalInterval: ((maxY - minY + pad * 2) / 3).clamp(0.1, double.infinity),
-          getDrawingHorizontalLine: (_) => FlLine(color: colors.line, strokeWidth: 1),
+          horizontalInterval: interval,
+          getDrawingHorizontalLine: (_) =>
+              FlLine(color: colors.line, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
+              interval: interval,
               getTitlesWidget: (value, meta) => Text(
-                value.toStringAsFixed(0),
+                value.toStringAsFixed(labelDecimals),
                 style: TextStyle(color: colors.mut, fontSize: 10),
               ),
             ),
@@ -115,7 +131,8 @@ class LineChartCard extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 24,
-              interval: (sorted.length / 4).clamp(1, double.infinity).roundToDouble(),
+              interval:
+                  (sorted.length / 4).clamp(1, double.infinity).roundToDouble(),
               getTitlesWidget: (value, meta) {
                 final i = value.round();
                 if (i < 0 || i >= sorted.length) return const SizedBox.shrink();
@@ -137,7 +154,10 @@ class LineChartCard extends StatelessWidget {
               final p = sorted[t.x.toInt()];
               return LineTooltipItem(
                 '${p.value.toStringAsFixed(1)}$valueSuffix\n${DateFormat.yMMMd().format(p.date)}',
-                TextStyle(color: colors.txt, fontWeight: FontWeight.w600, fontSize: 12),
+                TextStyle(
+                    color: colors.txt,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12),
               );
             }).toList(),
           ),
@@ -150,15 +170,18 @@ class LineChartCard extends StatelessWidget {
             color: lineColor,
             barWidth: 2.5,
             dotData: FlDotData(
-              getDotPainter: (spot, percent, bar, index) =>
-                  FlDotCirclePainter(radius: 3, color: lineColor, strokeColor: lineColor),
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                  radius: 3, color: lineColor, strokeColor: lineColor),
             ),
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [lineColor.withValues(alpha: 0.18), lineColor.withValues(alpha: 0.0)],
+                colors: [
+                  lineColor.withValues(alpha: 0.18),
+                  lineColor.withValues(alpha: 0.0)
+                ],
               ),
             ),
           ),
@@ -205,7 +228,8 @@ class BarChartCard extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.headlineMedium),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
-              Text(subtitle!, style: TextStyle(color: colors.mut, fontSize: 12.5)),
+              Text(subtitle!,
+                  style: TextStyle(color: colors.mut, fontSize: 12.5)),
             ],
             const SizedBox(height: 16),
             SizedBox(
@@ -227,24 +251,38 @@ class BarChartCard extends StatelessWidget {
   }
 
   Widget _buildChart(Color barColor, AppColors colors) {
-    final maxY = bars.map((b) => b.value).reduce((a, b) => a > b ? a : b) * 1.2;
+    final rawMaxY =
+        bars.map((b) => b.value).reduce((a, b) => a > b ? a : b) * 1.2;
+    final maxY = rawMaxY <= 0 ? 1.0 : rawMaxY;
+    // Same fix as LineChartCard: an explicit shared interval for both the
+    // gridlines and the left-axis labels, so a small maxY (e.g. every bar
+    // near 0) can't make fl_chart auto-pick a sub-1 interval whose
+    // fractional ticks then collapse into duplicate-looking whole-number
+    // labels under toStringAsFixed(0).
+    final interval = (maxY / 4).clamp(0.1, double.infinity);
+    final labelDecimals = interval < 1 ? 1 : 0;
     return BarChart(
       BarChartData(
-        maxY: maxY <= 0 ? 1 : maxY,
+        maxY: maxY,
         gridData: FlGridData(
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(color: colors.line, strokeWidth: 1),
+          horizontalInterval: interval,
+          getDrawingHorizontalLine: (_) =>
+              FlLine(color: colors.line, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
+              interval: interval,
               getTitlesWidget: (value, meta) => Text(
-                value.toStringAsFixed(0),
+                value.toStringAsFixed(labelDecimals),
                 style: TextStyle(color: colors.mut, fontSize: 10),
               ),
             ),
@@ -258,7 +296,8 @@ class BarChartCard extends StatelessWidget {
                 if (i < 0 || i >= bars.length) return const SizedBox.shrink();
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(bars[i].label, style: TextStyle(color: colors.mut, fontSize: 10)),
+                  child: Text(bars[i].label,
+                      style: TextStyle(color: colors.mut, fontSize: 10)),
                 );
               },
             ),
@@ -267,9 +306,11 @@ class BarChartCard extends StatelessWidget {
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (_) => colors.card2,
-            getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                BarTooltipItem(
               rod.toY.toStringAsFixed(0),
-              TextStyle(color: colors.txt, fontWeight: FontWeight.w600, fontSize: 12),
+              TextStyle(
+                  color: colors.txt, fontWeight: FontWeight.w600, fontSize: 12),
             ),
           ),
         ),

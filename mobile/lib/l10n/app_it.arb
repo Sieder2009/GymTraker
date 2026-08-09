@@ -1,15 +1,15 @@
 {
   "@@locale": "it",
-
   "tabTraining": "Allenamento",
   "tabStrength": "Forza",
   "tabProgress": "Progressi",
-
   "actionSave": "Salva",
   "actionSaveAndNext": "Salva e vai avanti",
   "actionCancel": "Annulla",
   "actionApply": "Applica",
-  "actionBack": "Indietro",
+  "actionBack": "Retro",
+  "actionLightMode": "Modalità chiara",
+  "actionDarkMode": "Modalità scura",
   "actionAnalyze": "Analizza",
   "actionAddExercise": "+ Aggiungi esercizio",
   "actionAddDayOrRoutine": "+ Aggiungi giorno/routine",
@@ -20,11 +20,12 @@
   "actionImportLog": "Importa registro",
   "actionLoadExample": "Carica piano di esempio",
   "actionSavePlan": "Salva piano",
+  "infoImportCreatesNewPlan": "Crea un nuovo piano; i piani esistenti restano invariati.",
+  "infoImportSummary": "{days} giorni · {exercises} esercizi rilevati",
   "actionStartWorkout": "Inizia allenamento",
   "actionFinishWorkout": "Termina allenamento",
   "actionCompleteSet": "Completa serie",
   "actionSkipRest": "Salta →",
-
   "titleNewPlan": "Nuovo piano",
   "titleImportLog": "Importa registro",
   "titlePlanPicker": "Scegli un piano di allenamento",
@@ -34,7 +35,6 @@
   "headerHistory": "CRONOLOGIA",
   "headerRpe": "RPE",
   "headerDetectedPrs": "PR rilevati",
-
   "labelPlanName": "Nome del piano",
   "labelDesignation": "Etichetta",
   "hintExercise": "Esercizio",
@@ -44,12 +44,11 @@
   "hintWeightTodayKg": "kg oggi",
   "labelPrKg": "PR (kg)",
   "hintLogPaste": "Incolla qui il registro …",
+  "hintExampleFormat": "Esempio:",
   "hintExerciseHistoryPaste": "Incolla qui il testo di questo esercizio …",
-
   "modeWeekday": "Giorno della settimana",
   "modeRotation": "Rotazione",
   "labelRestDay": "Giorno di riposo",
-
   "emptyNoPlan": "Nessun piano di allenamento ancora.",
   "emptyNoPlanShort": "Nessun piano di allenamento ancora.",
   "emptyRestDay": "Giorno di riposo — niente in programma oggi.",
@@ -60,14 +59,12 @@
   "infoDragToChange": "Trascina per regolare, oppure tocca il numero per digitarlo",
   "titleEnterWeight": "Inserisci peso",
   "infoHistoryLegend": "X = peso ridotto · M = peso aumentato · ✓ = fatto, senza numero di ripetizioni",
-
   "toastNameRequired": "Inserisci un nome",
   "toastPlanSaved": "Piano di allenamento salvato",
   "toastLogImported": "Registro importato",
   "toastLogRequired": "Incolla prima un registro.",
   "toastHistoryImported": "Cronologia importata",
   "toastWorkoutFinished": "Allenamento terminato",
-
   "labelEntry": "Voce",
   "labelCurrent": "Attuale",
   "labelBodyweightAbbr": "PC",
@@ -77,7 +74,6 @@
   "labelKraftBalance": "Equilibrio di forza",
   "radarHint": "Stacco da terra, panca piana e squat, rispetto al più forte dei tre esercizi nel piano attuale.",
   "labelStartToNow": "INIZIO → ORA",
-
   "daySubtitleRest": "{day} · Giorno di riposo",
   "daySubtitleWorkouts": "{day} · {count} allenamenti",
   "exerciseSetProgress": "Esercizio {exIdx}/{exTotal} · Serie {setIdx}/{setTotal}",
@@ -87,10 +83,8 @@
   "prValue": "PR {value} kg",
   "dayNumber": "Giorno {num}",
   "planSubtitleWeekday": "Piano settimanale",
-
   "exampleLogPlanName": "Piano di esempio",
   "actionAllPlans": "Tutti i piani",
-
   "weekdayMonShort": "Lu",
   "weekdayTueShort": "Ma",
   "weekdayWedShort": "Me",
@@ -98,10 +92,8 @@
   "weekdayFriShort": "Ve",
   "weekdaySatShort": "Sa",
   "weekdaySunShort": "Do",
-
   "labelBodyweightTitle": "Peso corporeo",
   "actionDelete": "Elimina",
-
   "titleBackup": "Backup e ripristino",
   "backupExportHint": "Copia i tuoi dati per conservarli al sicuro o trasferirli su un altro dispositivo.",
   "actionCopyToClipboard": "Copia negli appunti",
@@ -113,7 +105,6 @@
   "restoreConfirmBody": "Questo sovrascriverà tutti i piani, la cronologia e le impostazioni presenti su questo dispositivo. Questa azione non può essere annullata.",
   "toastRestoreDone": "Ripristinato — riavvia l'app per vedere i tuoi dati.",
   "toastRestoreInvalid": "Questo non sembra un backup valido.",
-
   "labelPowerliftingScore": "Punteggio powerlifting",
   "labelTotal": "Totale",
   "labelDotsScore": "Punteggio DOTS",
@@ -124,14 +115,12 @@
   "actionCalculate": "Calcola",
   "estimated1rmResult": "1RM stimato: {value} kg",
   "hintRepsPerformed": "Ripetizioni eseguite",
-
   "titleCalendar": "Calendario allenamenti",
   "calendarMonthSummary": "{count} allenamenti · {hours} h",
   "emptyNoSessionsThisDay": "Nessun allenamento registrato in questo giorno.",
   "labelMinutesShort": "{minutes} min",
   "calendarPrevMonth": "Mese precedente",
   "calendarNextMonth": "Mese successivo",
-
   "greetingMorning": "Buongiorno",
   "greetingAfternoon": "Buon pomeriggio",
   "greetingEvening": "Buonasera",
@@ -154,7 +143,6 @@
   "unitDays": "{days} giorni",
   "labelPlateauDetected": "PLATEAU RILEVATO",
   "plateauBody": "Variazione appena misurabile in {lift} negli ultimi {days} giorni.",
-
   "titleGallery": "Galleria",
   "actionChooseFromGallery": "Scegli dalla galleria",
   "actionTakePhoto": "Scatta una foto",
@@ -162,14 +150,12 @@
   "actionAddPhoto": "+ Aggiungi foto",
   "deletePhotoTitle": "Eliminare la foto?",
   "deletePhotoBody": "Questa foto verrà eliminata definitivamente.",
-
   "titleHealthSync": "Dati sulla salute",
   "actionConnectHealth": "Collega",
   "labelStepsToday": "Passi di oggi",
   "actionSyncWeightFromHealth": "Importa da Salute",
   "toastWeightSynced": "Peso corporeo importato da Salute",
   "toastNoHealthWeight": "Nessun peso trovato in Salute",
-
   "titleExercisePicker": "Scegli esercizio",
   "hintSearchExercise": "Cerca esercizio…",
   "actionPickFromList": "Scegli dalla lista",
@@ -186,10 +172,8 @@
   "categoryAll": "Tutti",
   "deletePlanTitle": "Eliminare il piano?",
   "deletePlanBody": "\"{name}\" e tutta la sua cronologia verranno eliminati definitivamente. Questa azione non può essere annullata.",
-
   "settingsLanguage": "Lingua",
   "languageSystem": "Predefinito di sistema",
-
   "tabAnalyticsOverview": "Panoramica",
   "tabAnalyticsStrength": "Forza",
   "tabAnalyticsVolume": "Volume",
@@ -207,20 +191,37 @@
   "chartTitleWeightProgress": "Andamento del peso",
   "chartEmptyExercise": "Registra questo esercizio in 2+ giorni diversi per vedere un trend.",
   "labelLast8Weeks": "Ultime 8 settimane",
-
   "titleSettings": "Impostazioni",
   "headerAppVersion": "VERSIONE APP",
   "labelInstalledVersion": "Installata: {version}",
-  "@labelInstalledVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@labelInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpdateAvailable": "Nuova versione disponibile: {version}",
-  "@labelUpdateAvailable": { "placeholders": { "version": { "type": "String" } } },
+  "@labelUpdateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpToDate": "Hai la versione più recente.",
   "actionCheckForUpdates": "Cerca aggiornamenti",
   "actionChecking": "Ricerca…",
   "actionDownloadUpdate": "Scarica",
   "actionInstallUpdate": "Installa",
   "labelDownloadingUpdate": "Download dell'aggiornamento… {percent}%",
-  "@labelDownloadingUpdate": { "placeholders": { "percent": { "type": "int" } } },
+  "@labelDownloadingUpdate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "labelUpdateReady": "Aggiornamento pronto per l'installazione",
   "updateErrorNoRelease": "Non c'è ancora nessuna versione pubblicata da confrontare.",
   "updateErrorBadResponse": "GitHub ha risposto con un errore.",
@@ -228,6 +229,7 @@
   "updateErrorNoVersion": "La risposta non conteneva un numero di versione.",
   "headerAppearance": "ASPETTO",
   "labelPrimaryColor": "Colore primario",
+  "labelDarkMode": "Modalità scura",
   "labelSecondaryColor": "Colore secondario",
   "actionResetColors": "Ripristina",
   "headerReminders": "PROMEMORIA",
@@ -237,10 +239,8 @@
   "notificationTitle": "Ironpeak Fitness",
   "notificationBody": "È ora di allenarsi.",
   "headerGeneral": "GENERALE",
-
   "titleMuscleEditor": "Attivazione muscolare",
   "actionFront": "Fronte",
-  "actionBack": "Retro",
   "labelIntensity": "Intensità",
   "hintTapMuscle": "Tocca un muscolo per indicare quanto viene sollecitato",
   "actionConfigureMuscles": "Configura muscoli",
@@ -262,11 +262,18 @@
   "muscleTriceps": "Tricipiti",
   "muscleGlutes": "Glutei",
   "muscleHamstrings": "Femorali",
-
   "headerHelp": "AIUTO",
   "actionEmail": "Email",
   "actionCall": "Chiama",
-
   "titleEnterLiftPr": "Inserisci PR di {lift}",
-  "@titleEnterLiftPr": { "placeholders": { "lift": { "type": "String" } } }
+  "@titleEnterLiftPr": {
+    "placeholders": {
+      "lift": {
+        "type": "String"
+      }
+    }
+  },
+  "actionReorderExercises": "Riordina",
+  "titleReorderExercises": "Ordine degli esercizi",
+  "hintReorderExercises": "Trascina per riordinare gli esercizi rimanenti"
 }

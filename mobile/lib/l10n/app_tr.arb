@@ -1,15 +1,15 @@
 {
   "@@locale": "tr",
-
   "tabTraining": "Antrenman",
   "tabStrength": "Güç",
   "tabProgress": "İlerleme",
-
   "actionSave": "Kaydet",
   "actionSaveAndNext": "Kaydet ve devam et",
   "actionCancel": "İptal",
   "actionApply": "Uygula",
-  "actionBack": "Geri",
+  "actionBack": "Arka",
+  "actionLightMode": "Aydınlık Mod",
+  "actionDarkMode": "Karanlık Mod",
   "actionAnalyze": "Analiz et",
   "actionAddExercise": "+ Egzersiz ekle",
   "actionAddDayOrRoutine": "+ Gün/rutin ekle",
@@ -20,11 +20,12 @@
   "actionImportLog": "Günlük içe aktar",
   "actionLoadExample": "Örnek planı yükle",
   "actionSavePlan": "Planı kaydet",
+  "infoImportCreatesNewPlan": "Yeni bir plan oluşturur; mevcut planların hiçbiri değişmez.",
+  "infoImportSummary": "{days} gün · {exercises} egzersiz algılandı",
   "actionStartWorkout": "Antrenmanı başlat",
   "actionFinishWorkout": "Antrenmanı bitir",
   "actionCompleteSet": "Seti tamamla",
   "actionSkipRest": "Atla →",
-
   "titleNewPlan": "Yeni plan",
   "titleImportLog": "Günlük içe aktar",
   "titlePlanPicker": "Antrenman planı seç",
@@ -34,7 +35,6 @@
   "headerHistory": "GEÇMİŞ",
   "headerRpe": "RPE",
   "headerDetectedPrs": "Tespit edilen rekorlar",
-
   "labelPlanName": "Plan adı",
   "labelDesignation": "Etiket",
   "hintExercise": "Egzersiz",
@@ -44,12 +44,11 @@
   "hintWeightTodayKg": "bugün kg",
   "labelPrKg": "Rekor (kg)",
   "hintLogPaste": "Günlüğü buraya yapıştır …",
+  "hintExampleFormat": "Örnek:",
   "hintExerciseHistoryPaste": "Bu egzersizin metnini buraya yapıştır …",
-
   "modeWeekday": "Haftanın günü",
   "modeRotation": "Rotasyon",
   "labelRestDay": "Dinlenme günü",
-
   "emptyNoPlan": "Henüz bir antrenman planı yok.",
   "emptyNoPlanShort": "Henüz bir antrenman planı yok.",
   "emptyRestDay": "Dinlenme günü — bugün için plan yok.",
@@ -60,14 +59,12 @@
   "infoDragToChange": "Ayarlamak için sürükle, veya yazmak için sayıya dokun",
   "titleEnterWeight": "Ağırlık gir",
   "infoHistoryLegend": "X = daha az ağırlık kullanıldı · M = daha fazla ağırlık kullanıldı · ✓ = tamamlandı, tekrar sayısı yok",
-
   "toastNameRequired": "Lütfen bir isim gir",
   "toastPlanSaved": "Antrenman planı kaydedildi",
   "toastLogImported": "Günlük içe aktarıldı",
   "toastLogRequired": "Önce bir günlük yapıştır.",
   "toastHistoryImported": "Geçmiş içe aktarıldı",
   "toastWorkoutFinished": "Antrenman tamamlandı",
-
   "labelEntry": "Kayıt",
   "labelCurrent": "Güncel",
   "labelBodyweightAbbr": "VA",
@@ -77,7 +74,6 @@
   "labelKraftBalance": "Güç dengesi",
   "radarHint": "Mevcut plandaki üç hareketten en güçlü olanına göre deadlift, bench press ve squat.",
   "labelStartToNow": "BAŞLANGIÇ → ŞİMDİ",
-
   "daySubtitleRest": "{day} · Dinlenme günü",
   "daySubtitleWorkouts": "{day} · {count} antrenman",
   "exerciseSetProgress": "Egzersiz {exIdx}/{exTotal} · Set {setIdx}/{setTotal}",
@@ -87,10 +83,8 @@
   "prValue": "Rekor {value} kg",
   "dayNumber": "Gün {num}",
   "planSubtitleWeekday": "Haftalık plan",
-
   "exampleLogPlanName": "Örnek plan",
   "actionAllPlans": "Tüm planlar",
-
   "weekdayMonShort": "Pzt",
   "weekdayTueShort": "Sal",
   "weekdayWedShort": "Çar",
@@ -98,10 +92,8 @@
   "weekdayFriShort": "Cum",
   "weekdaySatShort": "Cmt",
   "weekdaySunShort": "Paz",
-
   "labelBodyweightTitle": "Vücut ağırlığı",
   "actionDelete": "Sil",
-
   "titleBackup": "Yedekleme ve Geri Yükleme",
   "backupExportHint": "Verilerini güvenli bir yerde saklamak veya başka bir cihaza taşımak için kopyala.",
   "actionCopyToClipboard": "Panoya kopyala",
@@ -113,7 +105,6 @@
   "restoreConfirmBody": "Bu, bu cihazdaki tüm planların, geçmişin ve ayarların üzerine yazar. Bu işlem geri alınamaz.",
   "toastRestoreDone": "Geri yüklendi — verilerini görmek için uygulamayı yeniden başlat.",
   "toastRestoreInvalid": "Bu geçerli bir yedek gibi görünmüyor.",
-
   "labelPowerliftingScore": "Powerlifting Skoru",
   "labelTotal": "Toplam",
   "labelDotsScore": "DOTS skoru",
@@ -124,14 +115,12 @@
   "actionCalculate": "Hesapla",
   "estimated1rmResult": "Tahmini 1RM: {value} kg",
   "hintRepsPerformed": "Yapılan tekrar sayısı",
-
   "titleCalendar": "Antrenman Takvimi",
   "calendarMonthSummary": "{count} antrenman · {hours} sa",
   "emptyNoSessionsThisDay": "Bu gün için kayıtlı antrenman yok.",
   "labelMinutesShort": "{minutes} dk",
   "calendarPrevMonth": "Önceki ay",
   "calendarNextMonth": "Sonraki ay",
-
   "greetingMorning": "Günaydın",
   "greetingAfternoon": "İyi günler",
   "greetingEvening": "İyi akşamlar",
@@ -154,7 +143,6 @@
   "unitDays": "{days} gün",
   "labelPlateauDetected": "PLATO TESPİT EDİLDİ",
   "plateauBody": "Son {days} günde {lift} için ölçülebilir neredeyse hiç değişim yok.",
-
   "titleGallery": "Galeri",
   "actionChooseFromGallery": "Galeriden seç",
   "actionTakePhoto": "Fotoğraf çek",
@@ -162,14 +150,12 @@
   "actionAddPhoto": "+ Fotoğraf ekle",
   "deletePhotoTitle": "Fotoğraf silinsin mi?",
   "deletePhotoBody": "Bu fotoğraf kalıcı olarak silinecek.",
-
   "titleHealthSync": "Sağlık verileri",
   "actionConnectHealth": "Bağlan",
   "labelStepsToday": "Bugünkü adımlar",
   "actionSyncWeightFromHealth": "Sağlık'tan içe aktar",
   "toastWeightSynced": "Vücut ağırlığı Sağlık'tan içe aktarıldı",
   "toastNoHealthWeight": "Sağlık'ta ağırlık kaydı bulunamadı",
-
   "titleExercisePicker": "Egzersiz seç",
   "hintSearchExercise": "Egzersiz ara…",
   "actionPickFromList": "Listeden seç",
@@ -186,10 +172,8 @@
   "categoryAll": "Tümü",
   "deletePlanTitle": "Plan silinsin mi?",
   "deletePlanBody": "\"{name}\" ve tüm geçmişi kalıcı olarak silinecek. Bu işlem geri alınamaz.",
-
   "settingsLanguage": "Dil",
   "languageSystem": "Sistem varsayılanı",
-
   "tabAnalyticsOverview": "Genel Bakış",
   "tabAnalyticsStrength": "Güç",
   "tabAnalyticsVolume": "Hacim",
@@ -207,20 +191,37 @@
   "chartTitleWeightProgress": "Ağırlık İlerlemesi",
   "chartEmptyExercise": "Bir eğilim görmek için bu egzersizi 2+ farklı günde kaydet.",
   "labelLast8Weeks": "Son 8 hafta",
-
   "titleSettings": "Ayarlar",
   "headerAppVersion": "UYGULAMA SÜRÜMÜ",
   "labelInstalledVersion": "Yüklü: {version}",
-  "@labelInstalledVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@labelInstalledVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpdateAvailable": "Yeni sürüm mevcut: {version}",
-  "@labelUpdateAvailable": { "placeholders": { "version": { "type": "String" } } },
+  "@labelUpdateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "labelUpToDate": "En yeni sürüme sahipsin.",
   "actionCheckForUpdates": "Güncellemeleri kontrol et",
   "actionChecking": "Kontrol ediliyor…",
   "actionDownloadUpdate": "İndir",
   "actionInstallUpdate": "Yükle",
   "labelDownloadingUpdate": "Güncelleme indiriliyor… %{percent}",
-  "@labelDownloadingUpdate": { "placeholders": { "percent": { "type": "int" } } },
+  "@labelDownloadingUpdate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "labelUpdateReady": "Güncelleme yüklemeye hazır",
   "updateErrorNoRelease": "Henüz karşılaştırılacak yayınlanmış bir sürüm yok.",
   "updateErrorBadResponse": "GitHub bir hatayla yanıt verdi.",
@@ -228,6 +229,7 @@
   "updateErrorNoVersion": "Yanıt bir sürüm numarası içermiyordu.",
   "headerAppearance": "GÖRÜNÜM",
   "labelPrimaryColor": "Birincil renk",
+  "labelDarkMode": "Karanlık Mod",
   "labelSecondaryColor": "İkincil renk",
   "actionResetColors": "Sıfırla",
   "headerReminders": "HATIRLATICILAR",
@@ -237,10 +239,8 @@
   "notificationTitle": "Ironpeak Fitness",
   "notificationBody": "Antrenman zamanı.",
   "headerGeneral": "GENEL",
-
   "titleMuscleEditor": "Kas aktivasyonu",
   "actionFront": "Ön",
-  "actionBack": "Arka",
   "labelIntensity": "Yoğunluk",
   "hintTapMuscle": "Ne kadar çalıştığını belirlemek için bir kasa dokun",
   "actionConfigureMuscles": "Kasları yapılandır",
@@ -262,11 +262,18 @@
   "muscleTriceps": "Triceps",
   "muscleGlutes": "Kalça",
   "muscleHamstrings": "Arka uyluk",
-
   "headerHelp": "YARDIM",
   "actionEmail": "E-posta",
   "actionCall": "Ara",
-
   "titleEnterLiftPr": "{lift} PR girişi",
-  "@titleEnterLiftPr": { "placeholders": { "lift": { "type": "String" } } }
+  "@titleEnterLiftPr": {
+    "placeholders": {
+      "lift": {
+        "type": "String"
+      }
+    }
+  },
+  "actionReorderExercises": "Sırayı değiştir",
+  "titleReorderExercises": "Egzersiz sırası",
+  "hintReorderExercises": "Kalan egzersizleri yeniden sıralamak için sürükleyin"
 }

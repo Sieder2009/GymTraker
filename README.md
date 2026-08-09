@@ -33,11 +33,18 @@ Codebasis.
 - Trainingspläne nach Wochentag oder Rotation, von Hand angelegt, per
   Log-Import (eigenes handgeschriebenes Format) oder aus einem
   Beispielplan.
-- Geführtes Workout mit Pausen-Timer, Satz-für-Satz-Eingabe und
-  automatischer Volumen-/Satz-Erfassung pro Session.
+- Geführtes Workout mit Satz-für-Satz-Eingabe, live mitlaufender
+  Session-Uhr und RPE-Erfassung pro Satz. Übungsreihenfolge während der
+  Session per Drag-and-drop änderbar, ohne den gespeicherten Plan
+  anzufassen.
+- Pausen-Timer läuft wanduhrzeitbasiert (nicht als reiner Tick-Zähler) und
+  gleicht sich beim Zurückkehren aus dem Hintergrund sofort wieder ab —
+  bleibt also korrekt, egal wie lange das Handy währenddessen gesperrt war.
 - Ziehregler **und** Tastatur-Eingabe fürs Gewicht (Komma oder Punkt als
   Dezimaltrennzeichen).
 - Trainingskalender mit Monatsübersicht und Workout-Historie.
+- Wisch-Navigation zwischen den vier Haupt-Tabs (Training/Kraft/
+  Fortschritt/Übungen), zusätzlich zur Tab-Leiste unten.
 
 **Analytics** — eigener Tab mit vier Bereichen (Übersicht/Kraft/Volumen/
 Konstanz), jede Zahl und jeder Chart nachvollziehbar aus echten geloggten
@@ -53,18 +60,27 @@ Daten, nie aus Platzhaltern:
   Hinweistext statt einer erfundenen Linie.
 
 **Übungsdatenbank**
-- ~150 Übungen, kategorisiert (Brust/Rücken/Schultern/Beine/Arme/Rumpf/
-  Cardio), durchsuchbar und filterbar im eigenen "Übungen"-Tab.
+- 535 Übungen, kategorisiert (Brust/Rücken/Schultern/Beine/Arme/Rumpf/
+  Cardio), durchsuchbar und filterbar im eigenen "Übungen"-Tab — jede mit
+  einer exercise-science-basierten Muskel-Aktivierungs-Zuordnung
+  (`lib/data/exercise_muscle_map.dart`).
 - Wird **zur Laufzeit von GitHub** geladen (fällt bei fehlendem Internet auf
   einen zuletzt erfolgreichen Cache bzw. die mitgelieferte Kopie zurück) —
   Änderungen an `mobile/assets/exercises.json` im Repo aktualisieren die
   App ohne neues Release.
-- Muskelgruppen-Diagramm pro Übung (Front-/Rückansicht) und Link zu einer
-  YouTube-Suche nach Tutorials — die App bettet oder lädt selbst **keine**
-  fremden Videos/Bilder herunter, um kein Urheberrecht Dritter zu verletzen.
-- Beim Anlegen einer **eigenen** Übung: detaillierter
-  Muskel-Aktivierungs-Editor — einzelne Muskeln per Antippen auswählen und
-  die Belastungsintensität (0–100 %) einstellen.
+- **Illustriertes Muskeldiagramm pro Übung** (Front-/Rückansicht,
+  Männlich/Weiblich passend zur Athlet:innen-Einstellung): eine vollständig
+  durchgezeichnete Körperfigur — Hände, Füße, einzelne Bauchmuskel-Segmente
+  inklusive — bei der jede trainierte Muskelgruppe von Weiß (0 %) über
+  Hellrot bis Dunkelrot (100 %) eingefärbt wird, exakt nach der
+  hinterlegten Aktivierungsstärke. Zum genaueren Ansehen antippen öffnet
+  eine Vollbild-Ansicht zum Reinzoomen/Verschieben (`InteractiveViewer`).
+- Beim Anlegen einer **eigenen** Übung: derselbe Editor interaktiv — Muskeln
+  direkt auf der Figur antippen (echtes Hit-Testing gegen die gezeichnete
+  Kontur, keine grobe Trefferfläche) und die Belastungsintensität
+  (0–100 %) per Schieberegler einstellen. Das Ergebnis ist keine
+  Fleißarbeit für die Schublade: sobald konfiguriert, erscheint dasselbe
+  Muskeldiagramm auch beim Ausführen dieser Übung im Workout.
 
 **Sonstiges**
 - Health-Anbindung (Apple Health / Health Connect) für Schritte, Gewicht
@@ -121,8 +137,9 @@ mit eingecheckt:
 
 ### App herunterladen
 
-Jeder Push auf `master` (bzw. jeder `vX.Y.Z`-Tag für Releases) baut über
-GitHub Actions automatisch:
+Jeder `vX.Y.Z`-Tag baut über GitHub Actions automatisch (bewusst nicht bei
+jedem Push auf `master`, um nicht bei jedem Commit einen vollen
+Android-/iOS-Build anzustoßen):
 
 - **Android** — `.apk` (`.github/workflows/android.yml`)
 - **iOS** — unsigniertes `.ipa` (`.github/workflows/ios.yml`, siehe
@@ -140,7 +157,8 @@ mobile/
     analytics/          Reine Berechnungs-Engine für Trends/Konsistenz/
                          DOTS — nie eine Zahl ohne echte Datenbasis
     config/              Typisierter .env-Zugriff (app_config.dart)
-    data/                Konstanten, DOTS-/1RM-Formeln
+    data/                Konstanten, DOTS-/1RM-Formeln, Muskel-Aktivierung
+                         pro Übung, Körperfigur-Atlas fürs Muskeldiagramm
     l10n/                ARB-Übersetzungsdateien (10 Sprachen)
     models/              Datenmodelle (Exercise, Program, BigLift, …)
     overlays/             Vollbild-Screens (Plan-Editor, Workout, Settings, …)
@@ -256,6 +274,20 @@ src/
     WorkoutOverlay.svelte, ExerciseDetail.svelte, Strength.svelte,
     Progress.svelte, RadarChart.svelte, TabBar.svelte, Icon.svelte, Toast.svelte
 ```
+
+---
+
+## 🙏 Credits
+
+Die illustrierte Körperfigur im Muskeldiagramm (`mobile/lib/data/body_atlas*.dart`)
+basiert auf dem SVG-Körpermodell aus
+[react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
+von Hicham ELABBASSI (MIT-Lizenz, © 2022). Die reinen Pfaddaten wurden 1:1
+übernommen (TypeScript → Dart, Geometrie unverändert); die
+Muskelgruppen-Zuordnung, die geometrische Aufteilung von Deltoideus in
+vorderen/seitlichen Kopf sowie von "upper-back" in oberen Rücken/Latissimus,
+die Aktivierungsfarbskala, das Hit-Testing und das Caching sind eigene
+Arbeit dieses Projekts.
 
 ---
 

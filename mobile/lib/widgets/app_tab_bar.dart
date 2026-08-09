@@ -29,7 +29,7 @@ class AppTabBar extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 64,
+      height: 86,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -41,17 +41,33 @@ class AppTabBar extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    NavIcon(
-                      tabs[i].icon,
-                      color: active.index == i ? colors.accent : colors.mut,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tabs[i].label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: active.index == i ? FontWeight.w700 : FontWeight.w600,
+                    AnimatedScale(
+                      scale: active.index == i ? 1.08 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      child: NavIcon(
+                        tabs[i].icon,
                         color: active.index == i ? colors.accent : colors.mut,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          tabs[i].label,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: active.index == i
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color:
+                                active.index == i ? colors.accent : colors.mut,
+                          ),
+                        ),
                       ),
                     ),
                   ],

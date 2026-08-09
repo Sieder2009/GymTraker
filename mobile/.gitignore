@@ -29,6 +29,10 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
+# Generated fresh every CI run (flutter create --platforms=ios), same as
+# android/ used to be before Health Connect needed persistent manifest
+# changes — see .github/workflows/ios.yml.
+/ios/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies

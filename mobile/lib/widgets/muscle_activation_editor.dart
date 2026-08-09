@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../data/body_atlas.dart';
 import '../l10n/app_localizations.dart';
 import '../models/muscle_group.dart';
+import '../state/athlete_settings_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import 'detailed_body_diagram.dart';
@@ -39,7 +42,8 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
     super.initState();
     _activation = {
       for (final entry in widget.initial.entries)
-        if (muscleGroupFromKey(entry.key) != null) muscleGroupFromKey(entry.key)!: entry.value,
+        if (muscleGroupFromKey(entry.key) != null)
+          muscleGroupFromKey(entry.key)!: entry.value,
     };
   }
 
@@ -65,6 +69,8 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final colors = Theme.of(context).extension<AppColors>()!;
+    final isMale = context.watch<AthleteSettingsProvider>().isMale;
+    final gender = isMale ? BodyGender.male : BodyGender.female;
     final muscles = _front ? kFrontMuscles : kBackMuscles;
 
     return DraggableScrollableSheet(
@@ -81,18 +87,21 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(t.titleMuscleEditor, style: Theme.of(context).textTheme.headlineLarge),
+                      child: Text(t.titleMuscleEditor,
+                          style: Theme.of(context).textTheme.headlineLarge),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop({
-                        for (final e in _activation.entries) muscleGroupKey(e.key): e.value,
+                        for (final e in _activation.entries)
+                          muscleGroupKey(e.key): e.value,
                       }),
                       child: Text(t.actionSave),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(t.hintTapMuscle, style: TextStyle(color: colors.mut, fontSize: 12.5)),
+                Text(t.hintTapMuscle,
+                    style: TextStyle(color: colors.mut, fontSize: 12.5)),
                 const SizedBox(height: 12),
                 SegmentedButton<bool>(
                   segments: [
@@ -112,25 +121,25 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
                     child: Column(
                       children: [
                         AspectRatio(
-                          aspectRatio: 0.55,
+                          aspectRatio: kBodyDiagramAspect,
                           child: LayoutBuilder(
                             builder: (context, constraints) {
+                              final size = Size(
+                                  constraints.maxWidth, constraints.maxHeight);
                               return GestureDetector(
                                 onTapUp: (details) {
-                                  final hit = _hitTest(
-                                    details.localPosition,
-                                    Size(constraints.maxWidth, constraints.maxHeight),
-                                  );
+                                  final hit =
+                                      ParsedBodyAtlas.get(gender, _front, size)
+                                          .hitTest(details.localPosition);
                                   if (hit != null) _toggle(hit);
                                 },
                                 child: CustomPaint(
-                                  size: Size(constraints.maxWidth, constraints.maxHeight),
+                                  size: size,
                                   painter: BodyDiagramPainter(
                                     front: _front,
+                                    gender: gender,
                                     activation: _activation,
                                     selected: _selected,
-                                    outline: colors.line,
-                                    base: colors.card2,
                                     accent: colors.accent,
                                   ),
                                 ),
@@ -164,10 +173,13 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(t.labelIntensity, style: TextStyle(color: colors.mut)),
+                              Text(t.labelIntensity,
+                                  style: TextStyle(color: colors.mut)),
                               Text(
                                 '${(_activation[_selected!] ?? 0).round()}%',
-                                style: TextStyle(fontWeight: FontWeight.w700, color: colors.txt),
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.txt),
                               ),
                             ],
                           ),
@@ -190,22 +202,6 @@ class _MuscleActivationEditorState extends State<MuscleActivationEditor> {
       },
     );
   }
-
-  MuscleGroup? _hitTest(Offset local, Size size) {
-    final regions = bodyRegionsFor(_front);
-    for (final entry in regions.entries) {
-      for (final rect in entry.value) {
-        final scaled = Rect.fromLTWH(
-          rect.left * size.width,
-          rect.top * size.height,
-          rect.width * size.width,
-          rect.height * size.height,
-        );
-        if (scaled.contains(local)) return entry.key;
-      }
-    }
-    return null;
-  }
 }
 
 class _MuscleChip extends StatelessWidget {
@@ -226,15 +222,19 @@ class _MuscleChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    final bg = selected ? colors.accent : (active ? colors.accentSoft : colors.card2);
+    final bg =
+        selected ? colors.accent : (active ? colors.accentSoft : colors.card2);
     final fg = selected ? Colors.white : (active ? colors.accent : colors.txt);
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadii.pill)),
-        child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 13)),
+        decoration: BoxDecoration(
+            color: bg, borderRadius: BorderRadius.circular(AppRadii.pill)),
+        child: Text(label,
+            style: TextStyle(
+                color: fg, fontWeight: FontWeight.w600, fontSize: 13)),
       ),
     );
   }

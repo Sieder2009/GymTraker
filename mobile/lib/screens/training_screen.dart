@@ -25,7 +25,7 @@ import '../widgets/day_pill_selector.dart';
 import '../widgets/exercise_card.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/plan_picker_sheet.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../state/theme_provider.dart';
 import 'calendar_screen.dart';
 import 'gallery_screen.dart';
 
@@ -61,7 +61,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
     // Runs once (this screen stays mounted for the app's lifetime inside
     // the shell's IndexedStack) — matches the original's onMount-time
     // forced plan prompt when multiple plans exist.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeForcePlanPrompt());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _maybeForcePlanPrompt());
   }
 
   Future<void> _maybeForcePlanPrompt() async {
@@ -80,7 +81,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   void _selectPlan(Program p) {
-    final idx = todayIndexForProgram(mode: p.mode, currentDayIdx: p.currentDayIdx);
+    final idx =
+        todayIndexForProgram(mode: p.mode, currentDayIdx: p.currentDayIdx);
     context.read<TrainStateProvider>().selectPlan(p.id, viewedDayIdx: idx);
   }
 
@@ -101,13 +103,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _openExerciseDetail(String programId, int? dayIdx, int startIdx) {
     final programs = context.read<ProgramsProvider>();
     final plan = programs.byId(programId)!;
-    final exercises = dayIdx == null ? plan.dailyExercises : plan.days[dayIdx].exercises;
+    final exercises =
+        dayIdx == null ? plan.dailyExercises : plan.days[dayIdx].exercises;
     Navigator.of(context).push(MaterialPageRoute(
       fullscreenDialog: true,
       builder: (_) => ExerciseDetailScreen(
         exercises: exercises,
         startIdx: startIdx,
-        onSave: (idx, weight, reps) => programs.saveExerciseLog(exercises, idx, weight, reps),
+        onSave: (idx, weight, reps) =>
+            programs.saveExerciseLog(exercises, idx, weight, reps),
         onRename: (idx, name) => programs.renameExercise(exercises, idx, name),
         onImportHistory: (idx, weight, history) =>
             programs.importExerciseHistory(exercises, idx, weight, history),
@@ -143,13 +147,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
       );
     }
 
-    final plan = programsProvider.byId(trainState.activePlanId) ?? programs.first;
-    final todayIdx =
-        todayIndexForProgram(mode: plan.mode, currentDayIdx: plan.currentDayIdx);
-    final dayIdx = plan.mode == 'weekday' ? trainState.viewedDayIdx : plan.currentDayIdx;
-    final day = (plan.days.isNotEmpty && dayIdx < plan.days.length) ? plan.days[dayIdx] : null;
+    final plan =
+        programsProvider.byId(trainState.activePlanId) ?? programs.first;
+    final todayIdx = todayIndexForProgram(
+        mode: plan.mode, currentDayIdx: plan.currentDayIdx);
+    final dayIdx =
+        plan.mode == 'weekday' ? trainState.viewedDayIdx : plan.currentDayIdx;
+    final day = (plan.days.isNotEmpty && dayIdx < plan.days.length)
+        ? plan.days[dayIdx]
+        : null;
     final isRestDay = day?.rest ?? true;
-    final exercises = isRestDay ? const <Exercise>[] : (day?.exercises ?? const <Exercise>[]);
+    final exercises =
+        isRestDay ? const <Exercise>[] : (day?.exercises ?? const <Exercise>[]);
     final dailyExercises = isRestDay ? const <Exercise>[] : plan.dailyExercises;
 
     final localeName = Localizations.localeOf(context).toString();
@@ -158,56 +167,54 @@ class _TrainingScreenState extends State<TrainingScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, kFloatingNavClearance),
         children: [
+          // Absolute top-right corner, above everything else — one
+          // persistent menu for every header action (settings included)
+          // instead of a row of separate icon buttons competing with the
+          // greeting for the same line.
+          Row(
+            children: [
+              const Spacer(),
+              _OverflowMenuButton(
+                t: t,
+                programs: programs,
+                activePlanId: plan.id,
+                onSelectPlan: _selectPlan,
+                onDeletePlan: _deletePlan,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
           Text(_greeting(t), style: Theme.of(context).textTheme.headlineLarge),
           Text(
             DateFormat.yMMMMEEEEd(localeName).format(DateTime.now()),
             style: TextStyle(color: colors.mut),
           ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(plan.name, style: Theme.of(context).textTheme.headlineMedium),
-                    Text(
-                      isRestDay
-                          ? t.daySubtitleRest(day?.label ?? '')
-                          : t.daySubtitleWorkouts(day?.label ?? '', plan.completed),
-                      style: TextStyle(color: colors.mut),
-                    ),
-                  ],
-                ),
-              ),
-              const ThemeToggleButton(),
-              _OverflowMenuButton(t: t),
-              IconButton(
-                icon: const Icon(Icons.list_alt),
-                tooltip: t.actionAllPlans,
-                onPressed: () async {
-                  final chosen = await showPlanPicker(
-                    context,
-                    programs: programs,
-                    activeId: plan.id,
-                    onDelete: _deletePlan,
-                  );
-                  if (chosen != null) _selectPlan(chosen);
-                },
-              ),
-            ],
+          const SizedBox(height: 12),
+          Text(plan.name, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            isRestDay
+                ? t.daySubtitleRest(day?.label ?? '')
+                : t.daySubtitleWorkouts(day?.label ?? '', plan.completed),
+            style: TextStyle(color: colors.mut),
           ),
           const SizedBox(height: 12),
           if (plan.mode == 'weekday')
             DayPillSelector(
               todayIdx: todayIdx,
               selectedIdx: dayIdx,
-              onSelect: (i) => context.read<TrainStateProvider>().setViewedDayIdx(i),
+              onSelect: (i) =>
+                  context.read<TrainStateProvider>().setViewedDayIdx(i),
             ),
           const SizedBox(height: 16),
           _HomeDashboardStats(exercises: exercises, isRestDay: isRestDay),
-          const SizedBox(height: 16),
+          // Extra breathing room (not just the usual 16) before the "start
+          // workout" CTA -- it's the one button that can land right at the
+          // floating nav bar's fold on first load (no scroll needed), and
+          // longer-language translations of everything above it (stats
+          // labels, health-connect card, PR list) push it further down
+          // than German does, so a tight gap here risks the button peeking
+          // out from behind the bar instead of sitting safely under it.
+          const SizedBox(height: 28),
           if (isRestDay)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
@@ -225,16 +232,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(
                       fullscreenDialog: true,
-                      builder: (_) => WorkoutOverlayScreen(programId: plan.id, dayIdx: dayIdx),
+                      builder: (_) => WorkoutOverlayScreen(
+                          programId: plan.id, dayIdx: dayIdx),
                     )),
                     child: Text(t.actionStartWorkout),
                   ),
                 ),
               ),
             if (dailyExercises.isNotEmpty) ...[
-              Text(t.headerEveryTrainingDay, style: Theme.of(context).textTheme.labelSmall),
+              Text(t.headerEveryTrainingDay,
+                  style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 8),
               for (var i = 0; i < dailyExercises.length; i++)
                 ExerciseCard(
@@ -250,7 +260,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
               const SizedBox(height: 16),
             ],
             if (exercises.isNotEmpty) ...[
-              Text(t.headerTodaysDay, style: Theme.of(context).textTheme.labelSmall),
+              Text(t.headerTodaysDay,
+                  style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 8),
               for (var i = 0; i < exercises.length; i++)
                 ExerciseCard(
@@ -258,7 +269,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   onTapName: () => _openExerciseDetail(plan.id, dayIdx, i),
                   onAdjustWeight: (setIdx, delta) => context
                       .read<ProgramsProvider>()
-                      .adjustWeight(plan.days[dayIdx].exercises, i, setIdx, delta),
+                      .adjustWeight(
+                          plan.days[dayIdx].exercises, i, setIdx, delta),
                   onToggleSet: (setIdx) => context
                       .read<ProgramsProvider>()
                       .toggleSet(plan.days[dayIdx].exercises, i, setIdx),
@@ -306,10 +318,12 @@ class _HomeDashboardStats extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(t.labelNextWorkout, style: Theme.of(context).textTheme.labelSmall),
+                  Text(t.labelNextWorkout,
+                      style: Theme.of(context).textTheme.labelSmall),
                   const SizedBox(height: 6),
                   Text(
-                    t.exerciseCountEstimate(exercises.length, _estimateWorkoutMinutes(exercises)),
+                    t.exerciseCountEstimate(
+                        exercises.length, _estimateWorkoutMinutes(exercises)),
                     style: TextStyle(color: colors.mut),
                   ),
                 ],
@@ -320,11 +334,17 @@ class _HomeDashboardStats extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _QuickStatTile(label: t.labelWorkouts, value: '${week.workoutCount}')),
+            Expanded(
+                child: _QuickStatTile(
+                    label: t.labelWorkouts, value: '${week.workoutCount}')),
             const SizedBox(width: 10),
-            Expanded(child: _QuickStatTile(label: t.labelVolume, value: '${fmt(week.totalVolumeKg)} kg')),
+            Expanded(
+                child: _QuickStatTile(
+                    label: t.labelVolume,
+                    value: '${fmt(week.totalVolumeKg)} kg')),
             const SizedBox(width: 10),
-            Expanded(child: _QuickStatTile(label: t.labelPRs, value: '$recentPrs')),
+            Expanded(
+                child: _QuickStatTile(label: t.labelPRs, value: '$recentPrs')),
           ],
         ),
         const _HealthCard(),
@@ -337,10 +357,12 @@ class _HomeDashboardStats extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Icon(Icons.emoji_events_outlined, size: 18, color: colors.yellow),
+                  Icon(Icons.emoji_events_outlined,
+                      size: 18, color: colors.yellow),
                   const SizedBox(width: 8),
                   Expanded(child: Text(entry.key)),
-                  Text('${fmt1(entry.value)} kg', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text('${fmt1(entry.value)} kg',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -377,7 +399,8 @@ class _HealthCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(t.titleHealthSync, style: Theme.of(context).textTheme.headlineMedium),
+                    Text(t.titleHealthSync,
+                        style: Theme.of(context).textTheme.headlineMedium),
                     if (health.isAuthorized)
                       Text(
                         '${t.labelStepsToday}: ${health.stepsToday ?? '—'}',
@@ -458,7 +481,8 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: onNewPlan, child: Text(t.actionNewPlan)),
+              child: ElevatedButton(
+                  onPressed: onNewPlan, child: Text(t.actionNewPlan)),
             ),
             const SizedBox(height: 10),
             SizedBox(
@@ -485,82 +509,137 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-enum _OverflowAction { language, backup, calendar, gallery, settings }
+enum _OverflowAction {
+  settings,
+  allPlans,
+  calendar,
+  gallery,
+  theme,
+  language,
+  backup,
+}
 
-/// Groups the less-frequently-used header actions (language, backup) behind
-/// one menu button instead of two more permanent icon buttons — keeps the
-/// header from getting crowded next to the always-visible theme toggle and
-/// "all plans" button. Acting in [onSelected] (fired after the menu has
-/// already closed) rather than a per-item `onTap` avoids the bottom sheet's
-/// route fighting with the popup menu's own closing animation.
+/// One persistent dropdown for every header action, settings included —
+/// calendar, gallery, plan switcher, theme, language, backup all live here
+/// instead of as a row of separate icon buttons. A row of 5+ icon buttons
+/// reads as cluttered on a phone-width header; one recognizable "more" icon
+/// pinned to the very top-right corner that opens all of them does the same
+/// job without the visual noise. Acting in [onSelected] (fired after the
+/// menu has already closed) rather than a per-item `onTap` avoids the
+/// bottom sheet's route fighting with the popup menu's own closing
+/// animation.
 class _OverflowMenuButton extends StatelessWidget {
-  const _OverflowMenuButton({required this.t});
+  const _OverflowMenuButton({
+    required this.t,
+    required this.programs,
+    required this.activePlanId,
+    required this.onSelectPlan,
+    required this.onDeletePlan,
+  });
 
   final AppLocalizations t;
+  final List<Program> programs;
+  final String activePlanId;
+  final ValueChanged<Program> onSelectPlan;
+  final ValueChanged<Program> onDeletePlan;
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<_OverflowAction>(
       icon: const Icon(Icons.more_vert),
-      onSelected: (action) {
+      onSelected: (action) async {
         switch (action) {
-          case _OverflowAction.language:
-            showLanguagePicker(context);
-          case _OverflowAction.backup:
-            showBackupSheet(context);
-          case _OverflowAction.calendar:
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalendarScreen()));
-          case _OverflowAction.gallery:
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GalleryScreen()));
           case _OverflowAction.settings:
             Navigator.of(context).push(MaterialPageRoute(
               fullscreenDialog: true,
               builder: (_) => const SettingsScreen(),
             ));
+          case _OverflowAction.allPlans:
+            final chosen = await showPlanPicker(
+              context,
+              programs: programs,
+              activeId: activePlanId,
+              onDelete: onDeletePlan,
+            );
+            if (chosen != null) onSelectPlan(chosen);
+          case _OverflowAction.calendar:
+            Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CalendarScreen()));
+          case _OverflowAction.gallery:
+            Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const GalleryScreen()));
+          case _OverflowAction.theme:
+            context.read<ThemeProvider>().toggle();
+          case _OverflowAction.language:
+            showLanguagePicker(context);
+          case _OverflowAction.backup:
+            showBackupSheet(context);
         }
       },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: _OverflowAction.settings,
-          child: ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: Text(t.titleSettings),
-            contentPadding: EdgeInsets.zero,
+      itemBuilder: (context) {
+        final isDark = context.read<ThemeProvider>().isDark;
+        return [
+          PopupMenuItem(
+            value: _OverflowAction.settings,
+            child: ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: Text(t.titleSettings),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
-        PopupMenuItem(
-          value: _OverflowAction.calendar,
-          child: ListTile(
-            leading: const Icon(Icons.calendar_month_outlined),
-            title: Text(t.titleCalendar),
-            contentPadding: EdgeInsets.zero,
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: _OverflowAction.allPlans,
+            child: ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: Text(t.actionAllPlans),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
-        PopupMenuItem(
-          value: _OverflowAction.gallery,
-          child: ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: Text(t.titleGallery),
-            contentPadding: EdgeInsets.zero,
+          PopupMenuItem(
+            value: _OverflowAction.calendar,
+            child: ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: Text(t.titleCalendar),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
-        PopupMenuItem(
-          value: _OverflowAction.language,
-          child: ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(t.settingsLanguage),
-            contentPadding: EdgeInsets.zero,
+          PopupMenuItem(
+            value: _OverflowAction.gallery,
+            child: ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(t.titleGallery),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
-        PopupMenuItem(
-          value: _OverflowAction.backup,
-          child: ListTile(
-            leading: const Icon(Icons.import_export),
-            title: Text(t.titleBackup),
-            contentPadding: EdgeInsets.zero,
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: _OverflowAction.theme,
+            child: ListTile(
+              leading: Icon(
+                  isDark ? Icons.wb_sunny_outlined : Icons.dark_mode_outlined),
+              title: Text(isDark ? t.actionLightMode : t.actionDarkMode),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
-      ],
+          PopupMenuItem(
+            value: _OverflowAction.language,
+            child: ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(t.settingsLanguage),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+          PopupMenuItem(
+            value: _OverflowAction.backup,
+            child: ListTile(
+              leading: const Icon(Icons.import_export),
+              title: Text(t.titleBackup),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ];
+      },
     );
   }
 }
